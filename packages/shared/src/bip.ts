@@ -10,7 +10,7 @@ export interface Bip {
   type: BipType;
   /** Author names / handles as listed in the BIP header. */
   authors?: string[];
-  /** Plain-language explanation produced by the LLM explainer (Tuma). */
+  /** Plain-language explanation produced by the LLM explainer (backend). */
   plainSummary?: string;
   /** Link to the canonical BIP text. */
   sourceUrl?: string;

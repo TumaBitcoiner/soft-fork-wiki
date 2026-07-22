@@ -1,7 +1,5 @@
 # @soft-fork-wiki/frontend — UI (Shakespeare + Nostr)
 
-**Owner: Hugo**
-
 The user-facing app: browse BIPs, read the plain-language explanation, react
 *in favour / against*, and see what the network thinks.
 

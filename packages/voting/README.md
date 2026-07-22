@@ -1,6 +1,6 @@
 # @soft-fork-wiki/voting — opinion capture + zap-to-vote
 
-**Owner: Miguel**
+**Owner: MorningRevolution**
 
 Captures a user's stance on a BIP and records it on Nostr. Three mechanisms:
 

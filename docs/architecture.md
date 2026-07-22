@@ -9,20 +9,20 @@ How the pieces fit, the Nostr event model, and the voting design.
 
 ```
                  ┌────────────────────────┐
-   BIP data ────▶│  data (Tuma)           │  BIP index + LLM plain-language
+   BIP data ────▶│  backend (BIPs API)    │  BIP index + LLM plain-language
                  │  LLM explainer         │  explanation
                  └───────────┬────────────┘
                              │ Bip { number, title, plainSummary, ... }
                              ▼
    user  ───▶  ┌────────────────────────┐
-              │  frontend (Hugo)        │  "What is BIP 110?" -> explanation
+              │  frontend               │  "What is BIP 110?" -> explanation
               │  Shakespeare + Nostr    │  "In favour / against?" -> capture
               └───────┬────────────┬────┘
                       │            │
          vote / zap   │            │  network sentiment
                       ▼            ▼
       ┌───────────────────┐   ┌──────────────────────┐
-      │ voting (Miguel)   │   │ sentiment (Miguel)   │
+      │ voting            │   │ sentiment            │
       │ poll + zap        │   │ fetch Nostr notes    │
       │ capture on Nostr  │   │ classify + aggregate │
       └─────────┬─────────┘   └──────────┬───────────┘
@@ -31,7 +31,7 @@ How the pieces fit, the Nostr event model, and the voting design.
                            ▼
                  ┌────────────────────────┐
                  │  analytics dashboard   │  per-BIP: votes + zapped sats
-                 │  (Miguel / Matthew)    │  + network sentiment
+                 │                        │  + network sentiment
                  └────────────────────────┘
 ```
 

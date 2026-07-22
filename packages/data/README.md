@@ -1,6 +1,8 @@
 # @soft-fork-wiki/data — BIP source data + LLM explainer
 
-**Owner: Tuma**
+> **Superseded:** the BIPs API now lives at [`src/backend`](../../src/backend)
+> (Python/FastAPI + SQLite). This placeholder is kept only until the two layouts
+> are reconciled — see the integration doc.
 
 This package holds the source information about BIPs and the LLM "explain in
 plain terms" piece.

@@ -1,6 +1,6 @@
 # @soft-fork-wiki/sentiment — network sentiment on BIPs
 
-**Owner: Miguel**
+**Owner: MorningRevolution**
 
 Answers "what does the Nostr network think about BIP N?" by fetching public
 discussion, classifying each note's stance with an LLM, and aggregating.
