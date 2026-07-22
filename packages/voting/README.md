@@ -7,10 +7,10 @@ Captures a user's stance on a BIP and records it on Nostr. Two mechanisms:
 1. **Opinion event** — a simple, free signal (favour / against / neutral)
    published as a Nostr event tagged with the BIP.
 2. **Zap-to-vote** — a Lightning zap (NIP-57) that puts sats behind a stance.
-   Zapping is inherently *one-sided* (you can only pay to signal support), so we
-   treat zaps as a weighted "in favour" signal and read the tally in sats as
-   well as vote count. See `docs/architecture.md` for the design and its
-   tradeoffs (sybil resistance vs. cost vs. one-sidedness).
+   Two-sided: each BIP has a FOR anchor and an AGAINST anchor, so a zap can
+   express either side. The zap request carries a stance label; the tally reads
+   both vote count and zapped sats per side. See `docs/architecture.md` for the
+   design and tradeoffs (sybil resistance vs. cost, and where "against" sats go).
 
 ## Modules
 

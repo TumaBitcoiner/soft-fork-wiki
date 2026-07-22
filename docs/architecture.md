@@ -48,9 +48,10 @@ We capture opinion **two** ways, and read sentiment a **third**:
    tagged with the BIP and a stance label. Anyone can react favour / against /
    neutral at no cost. High reach, low cost-to-fake.
 2. **Zap-to-vote** (`voting/zap.ts`) — a Lightning zap (NIP-57) puts sats behind
-   support. Costs real money, so it's much harder to sybil — but it's
-   **one-sided**: you can only pay to signal *support*, never opposition. We
-   treat a zap as a weighted "favour" and report the tally in sats.
+   a stance. Each BIP has **two zap targets** — a FOR anchor and an AGAINST
+   anchor (two notes or two Lightning addresses) — so a zap can express *either*
+   side. Which target you zap is the stance; the sats are the weight. The zap
+   request also carries a stance label, so the receipt is self-describing.
 3. **Network sentiment** (`sentiment/`) — we don't wait for people to use our
    app. We fetch existing public discussion of a BIP and classify it, so we can
    show "what the network already thinks" from day one.
@@ -61,13 +62,17 @@ We capture opinion **two** ways, and read sentiment a **third**:
 |---|---|---|
 | Cost to cast | Free | Real sats (Lightning) |
 | Sybil resistance | Low (one npub = one vote, npubs are free) | High (each vote costs money) |
-| Can express opposition? | Yes | **No** — zaps only signal support |
-| Signal | Vote count | Vote count **and** sats weight |
+| Can express opposition? | Yes | **Yes** — via two targets (FOR / AGAINST) |
+| Signal | Vote count | Vote count **and** sats weight, per side |
 
-Because zaps are one-sided, we never read "against" from zaps. The honest way to
-present it: *"N people and X sats in favour"* alongside the free-vote tally,
-which captures both sides. Sentiment analysis fills the "against" picture from
-organic discussion.
+The one real design choice is where "against" sats land — a shared BIP fund, or
+keep zaps tiny (e.g. 1 sat) so they're pure signal. That's a product decision,
+not a technical limit. The tally reports favour/against counts plus zapped sats
+**per side** (`zappedSatsFavour` / `zappedSatsAgainst`).
+
+> A future, free, two-sided option is **BIP-322 sign-to-vote** (`wallet`,
+> proposed) — prove control of a Bitcoin key/coins to cast a weighted vote
+> without spending. Not implemented yet.
 
 ## Nostr event model (working assumptions)
 

@@ -14,7 +14,7 @@ fetch notes tagged #bipN  ->  classify each (favour/against/neutral)  ->  aggreg
 
 - `fetch.ts` — pull kind:1 notes that mention a BIP from relays, by `t` tag.
 - `providers/` — a pluggable `SentimentClassifier` interface with two backends:
-  - `claude.ts` — Anthropic (`claude-opus-4-8`), strict JSON output.
+  - `claude.ts` — Anthropic (`claude-haiku-4-5`), JSON output.
   - `gemini.ts` — Google **Gemini Flash** (`gemini-2.5-flash`), JSON output.
   - Same prompt (`prompt.ts`) feeds both, so results are comparable.
 - `classify.ts` — picks a provider from config/env and classifies a batch.
@@ -36,6 +36,6 @@ you can also run both and compare — handy for a hackathon demo ("Claude vs
 Gemini Flash on what the network thinks about BIP 110").
 
 - **Claude** needs `ANTHROPIC_API_KEY` (or `ant auth login`). Defaults to
-  `claude-opus-4-8`; set `CLAUDE_MODEL=claude-haiku-4-5` for cheaper high-volume runs.
+  `claude-haiku-4-5` (fast/cheap for per-note classification); override with `CLAUDE_MODEL`.
 - **Gemini** needs `GEMINI_API_KEY`. Defaults to `gemini-2.5-flash`
   (override with `GEMINI_MODEL`).
