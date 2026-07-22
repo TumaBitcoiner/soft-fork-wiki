@@ -13,7 +13,8 @@ export function tallyOpinions(
   let favour = 0;
   let against = 0;
   let neutral = 0;
-  let zappedMsat = 0;
+  let zappedMsatFavour = 0;
+  let zappedMsatAgainst = 0;
 
   for (const o of forBip) {
     voters.add(o.pubkey);
@@ -21,7 +22,10 @@ export function tallyOpinions(
     else if (o.stance === "against") against++;
     else neutral++;
 
-    if (o.source === "zap") zappedMsat += o.amountMsat ?? 0;
+    if (o.source === "zap") {
+      if (o.stance === "favour") zappedMsatFavour += o.amountMsat ?? 0;
+      else if (o.stance === "against") zappedMsatAgainst += o.amountMsat ?? 0;
+    }
   }
 
   return {
@@ -30,6 +34,7 @@ export function tallyOpinions(
     against,
     neutral,
     uniqueVoters: voters.size,
-    zappedSats: Math.floor(zappedMsat / 1000),
+    zappedSatsFavour: Math.floor(zappedMsatFavour / 1000),
+    zappedSatsAgainst: Math.floor(zappedMsatAgainst / 1000),
   };
 }

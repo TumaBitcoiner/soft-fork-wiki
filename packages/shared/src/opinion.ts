@@ -35,6 +35,8 @@ export interface OpinionTally {
   neutral: number;
   /** Distinct pubkeys that expressed any opinion. */
   uniqueVoters: number;
-  /** Total sats zapped in favour (zap-to-vote is inherently one-sided). */
-  zappedSats: number;
+  /** Sats zapped to the FOR anchor. */
+  zappedSatsFavour: number;
+  /** Sats zapped to the AGAINST anchor. */
+  zappedSatsAgainst: number;
 }

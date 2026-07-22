@@ -2,16 +2,18 @@
  * Zap-to-vote (NIP-57).
  *
  * Flow:
- *  1. Build a kind:9734 zap request tagged with the BIP (and optionally the
- *     opinion note being zapped).
+ *  1. Build a kind:9734 zap request tagged with the BIP AND the stance the zap
+ *     expresses (favour / against).
  *  2. Hand it to the recipient's LNURL-pay callback (`?nostr=<event>&amount=`),
  *     get a bolt11 invoice, and have the user pay it (WebLN / wallet).
  *  3. The LN server publishes a kind:9735 zap receipt. We read those receipts
- *     back and count each as a weighted "in favour" vote.
+ *     back and count each as a weighted vote for that stance.
  *
- * Zapping is one-sided: you can only pay to signal *support*. So a zap always
- * maps to stance "favour"; the weight is the amount in sats. See
- * docs/architecture.md for the sybil/cost tradeoffs.
+ * Zaps are two-sided: each BIP has two zap targets (a FOR anchor and an AGAINST
+ * anchor — two notes or two Lightning addresses). Which target you zap is the
+ * stance; the amount in sats is the weight. We also stamp the stance on the zap
+ * request itself so the receipt is self-describing without needing the
+ * target->stance mapping. See docs/architecture.md.
  */
 import { finalizeEvent, type Event, type EventTemplate } from "nostr-tools";
 import {
@@ -19,17 +21,22 @@ import {
   NOSTR_KINDS,
   bipHashtag,
   type Opinion,
+  type Stance,
 } from "@soft-fork-wiki/shared";
+
+const STANCE_NAMESPACE = "stance";
 
 export interface BuildZapRequestInput {
   bipNumber: number;
-  /** Recipient pubkey (hex) — usually the BIP's dedicated vote account. */
+  /** Stance this zap expresses. Zaps are for "favour" or "against". */
+  stance: Extract<Stance, "favour" | "against">;
+  /** Recipient pubkey (hex) — the BIP's FOR or AGAINST vote account. */
   recipientPubkey: string;
   /** Amount to zap, in millisats. */
   amountMsat: number;
   /** Relays the zap receipt should be published to. */
   relays: string[];
-  /** Optional opinion note id being zapped (adds an "e" tag). */
+  /** The stance anchor note being zapped (adds an "e" tag). */
   zappedEventId?: string;
   createdAt: number;
   /** Optional message shown with the zap. */
@@ -44,6 +51,8 @@ export function buildZapRequest(input: BuildZapRequestInput): EventTemplate {
     ["relays", ...input.relays],
     ["t", bipHashtag(input.bipNumber)],
     ["t", APP_TAG],
+    ["L", STANCE_NAMESPACE],
+    ["l", input.stance, STANCE_NAMESPACE],
   ];
   if (input.zappedEventId) tags.push(["e", input.zappedEventId]);
 
@@ -95,11 +104,18 @@ export function parseZapReceipt(receipt: Event): Opinion | null {
     reqTags.find((t) => t[0] === "amount")?.[1] ?? 0,
   );
 
+  // Stance is stamped on the zap request; default to "favour" for legacy
+  // single-target zaps that predate two-sided voting.
+  const stanceTag = reqTags.find(
+    (t) => t[0] === "l" && t[2] === STANCE_NAMESPACE,
+  );
+  const stance = (stanceTag?.[1] as Stance) ?? "favour";
+
   return {
     bipNumber: Number(bipTag[1].slice(3)),
     // The zapping user is the author of the zap request, not the receipt.
     pubkey: zapRequest.pubkey,
-    stance: "favour",
+    stance,
     source: "zap",
     amountMsat: Number.isFinite(amountMsat) ? amountMsat : undefined,
     eventId: receipt.id,
