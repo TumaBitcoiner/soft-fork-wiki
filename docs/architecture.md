@@ -68,9 +68,7 @@ The research is explicit: **zaps do not provide sybil resistance**, and a
 sats-weighted "Zap Poll" (NIP-69) was proposed but never merged. So we use the
 **NIP-88 poll as the vote** and **zaps as a paid intensity signal** layered on
 top. Neither is sybil-proof; the honest presentation pairs both with the
-LLM-derived network sentiment. (A future, free, harder-to-sybil option is
-**BIP-322 sign-to-vote** — prove control of a key/coins without spending — but
-it's not implemented, and BDK lacks first-class BIP-322 support, so it's parked.)
+LLM-derived network sentiment.
 
 ## Nostr event model (research-backed)
 

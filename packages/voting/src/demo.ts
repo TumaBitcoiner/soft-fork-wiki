@@ -4,6 +4,12 @@
  */
 import { generateSecretKey } from "nostr-tools";
 import { buildOpinionEvent, signOpinion, parseOpinion } from "./opinion.js";
+import {
+  buildBipPoll,
+  buildPollResponse,
+  signEvent,
+  tallyPollResponses,
+} from "./poll.js";
 import { tallyOpinions } from "./tally.js";
 import type { Opinion } from "@soft-fork-wiki/shared";
 
@@ -30,3 +36,18 @@ const sample: Opinion[] = [
 ];
 
 console.log("Tally for BIP 110:", tallyOpinions(110, sample));
+
+// --- NIP-88 poll flow ---
+const poll = signEvent(buildBipPoll({ bipNumber: 110, createdAt: now }), sk);
+console.log("\nPoll event (kind 1068):", poll.id);
+
+// Two voters; the first changes their mind (later response wins).
+const voterA = generateSecretKey();
+const voterB = generateSecretKey();
+const responses = [
+  signEvent(buildPollResponse({ pollId: poll.id, stance: "against", createdAt: now }), voterA),
+  signEvent(buildPollResponse({ pollId: poll.id, stance: "favour", createdAt: now + 60 }), voterA),
+  signEvent(buildPollResponse({ pollId: poll.id, stance: "favour", createdAt: now }), voterB),
+];
+
+console.log("Poll tally (one vote/pubkey, latest wins):", tallyPollResponses(poll.id, responses));

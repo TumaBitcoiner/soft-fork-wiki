@@ -2,20 +2,23 @@
 
 **Owner: Miguel**
 
-Captures a user's stance on a BIP and records it on Nostr. Two mechanisms:
+Captures a user's stance on a BIP and records it on Nostr. Three mechanisms:
 
-1. **Opinion event** — a simple, free signal (favour / against / neutral)
-   published as a Nostr event tagged with the BIP.
-2. **Zap-to-vote** — a Lightning zap (NIP-57) that puts sats behind a stance.
-   Two-sided: each BIP has a FOR anchor and an AGAINST anchor, so a zap can
-   express either side. The zap request carries a stance label; the tally reads
-   both vote count and zapped sats per side. See `docs/architecture.md` for the
-   design and tradeoffs (sybil resistance vs. cost, and where "against" sats go).
+1. **NIP-88 poll — the vote** (`poll.ts`). A `kind:1068` poll with For / Against
+   / Neutral options; each vote is a `kind:1018` response. Free, two-sided, one
+   vote per pubkey (latest wins). This is the primary favour/against capture.
+2. **Zap — paid intensity** (`zap.ts`, NIP-57). A Lightning zap puts sats behind
+   a stance via two targets (FOR / AGAINST anchors). The tally reads zapped sats
+   per side. Zaps are the conviction layer, not the vote (they aren't
+   sybil-resistant — see `docs/architecture.md`).
+3. **Opinion note** (`opinion.ts`) — a free `kind:1` note with a stance label,
+   for reach in normal Nostr clients.
 
 ## Modules
 
 - `nostr.ts` — relay pool + publish/subscribe helpers (wraps `nostr-tools`).
-- `opinion.ts` — build & publish an opinion event; parse them back out.
+- `poll.ts` — build a NIP-88 poll + responses; tally one-vote-per-pubkey.
+- `opinion.ts` — build & publish an opinion note; parse them back out.
 - `zap.ts` — build a NIP-57 zap request and interpret zap receipts as votes.
 - `tally.ts` — aggregate opinions + zaps into an `OpinionTally` for analytics.
 - `demo.ts` — runnable smoke test (`pnpm --filter @soft-fork-wiki/voting dev`).
