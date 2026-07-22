@@ -1,11 +1,9 @@
 # Architecture
 
-How the pieces fit, the Nostr event model, and the zap-to-vote design.
+How the pieces fit, the Nostr event model, and the voting design.
 
-> Nostr specifics below (event kinds, tag conventions, relays) are our working
-> assumptions. A deep-research report on Nostr BIP-discussion and zap-to-vote is
-> being folded in — see the "Open questions" section and expect this doc to
-> tighten as findings land.
+> The Nostr specifics below are now backed by a deep-research pass over the NIPs
+> (see "Research notes" at the end), not just assumptions.
 
 ## Flow
 
@@ -21,18 +19,18 @@ How the pieces fit, the Nostr event model, and the zap-to-vote design.
               │  Shakespeare + Nostr    │  "In favour / against?" -> capture
               └───────┬────────────┬────┘
                       │            │
-         opinion/zap  │            │  network sentiment
+         vote / zap   │            │  network sentiment
                       ▼            ▼
       ┌───────────────────┐   ┌──────────────────────┐
       │ voting (Miguel)   │   │ sentiment (Miguel)   │
-      │ opinion + zap     │   │ fetch Nostr notes    │
+      │ poll + zap        │   │ fetch Nostr notes    │
       │ capture on Nostr  │   │ classify + aggregate │
       └─────────┬─────────┘   └──────────┬───────────┘
                 │ OpinionTally            │ SentimentSummary
                 └──────────┬──────────────┘
                            ▼
                  ┌────────────────────────┐
-                 │  analytics dashboard   │  per-BIP: our votes + zapped sats
+                 │  analytics dashboard   │  per-BIP: votes + zapped sats
                  │  (Miguel / Matthew)    │  + network sentiment
                  └────────────────────────┘
 ```
@@ -40,50 +38,62 @@ How the pieces fit, the Nostr event model, and the zap-to-vote design.
 Everything shares types from [`@soft-fork-wiki/shared`](../packages/shared):
 `Bip`, `Opinion`, `OpinionTally`, `ClassifiedNote`, `SentimentSummary`.
 
-## Two signals per BIP
+## Three signals per BIP
 
-We capture opinion **two** ways, and read sentiment a **third**:
-
-1. **Explicit opinion** (`voting/opinion.ts`) — a free Nostr note (kind:1)
-   tagged with the BIP and a stance label. Anyone can react favour / against /
-   neutral at no cost. High reach, low cost-to-fake.
-2. **Zap-to-vote** (`voting/zap.ts`) — a Lightning zap (NIP-57) puts sats behind
-   a stance. Each BIP has **two zap targets** — a FOR anchor and an AGAINST
-   anchor (two notes or two Lightning addresses) — so a zap can express *either*
-   side. Which target you zap is the stance; the sats are the weight. The zap
-   request also carries a stance label, so the receipt is self-describing.
+1. **The vote — a NIP-88 poll** (`kind:1068` poll, `kind:1018` response). This is
+   the standard, **free, two-sided** primitive: favour / against / neutral, one
+   vote per pubkey (latest response wins). It's the clean way to capture for/
+   against — no payment required, and opposition is a first-class option.
+   *(Also supported: a plain `kind:1` opinion note with a stance label, for reach
+   in normal Nostr clients — see `voting/opinion.ts`.)*
+2. **Zap = paid intensity** (`voting/zap.ts`, NIP-57). A Lightning zap puts sats
+   behind a stance. We give each BIP two zap targets (FOR / AGAINST anchors) so
+   sats can weight either side, and the tally reports zapped sats **per side**.
+   Zaps are the *conviction* layer on top of the poll, **not** the vote itself —
+   see the caveat below.
 3. **Network sentiment** (`sentiment/`) — we don't wait for people to use our
    app. We fetch existing public discussion of a BIP and classify it, so we can
    show "what the network already thinks" from day one.
 
-### Why zap-to-vote, and its tradeoffs
+### Poll vs zap — why the poll is the vote
 
-| Property | Free opinion note | Zap-to-vote |
+| Property | NIP-88 poll | Zap-to-vote (NIP-57) |
 |---|---|---|
-| Cost to cast | Free | Real sats (Lightning) |
-| Sybil resistance | Low (one npub = one vote, npubs are free) | High (each vote costs money) |
-| Can express opposition? | Yes | **Yes** — via two targets (FOR / AGAINST) |
-| Signal | Vote count | Vote count **and** sats weight, per side |
+| Cost to cast | Free | Real sats |
+| Two-sided (for/against)? | **Yes**, native | Only via our two-target hack |
+| Sybil resistant? | No (npubs are free) | **No** either — a zap ≠ proof of unique human |
+| Extra signal | one vote per pubkey | **sats weight** (conviction) |
 
-The one real design choice is where "against" sats land — a shared BIP fund, or
-keep zaps tiny (e.g. 1 sat) so they're pure signal. That's a product decision,
-not a technical limit. The tally reports favour/against counts plus zapped sats
-**per side** (`zappedSatsFavour` / `zappedSatsAgainst`).
+The research is explicit: **zaps do not provide sybil resistance**, and a
+sats-weighted "Zap Poll" (NIP-69) was proposed but never merged. So we use the
+**NIP-88 poll as the vote** and **zaps as a paid intensity signal** layered on
+top. Neither is sybil-proof; the honest presentation pairs both with the
+LLM-derived network sentiment. (A future, free, harder-to-sybil option is
+**BIP-322 sign-to-vote** — prove control of a key/coins without spending — but
+it's not implemented, and BDK lacks first-class BIP-322 support, so it's parked.)
 
-> A future, free, two-sided option is **BIP-322 sign-to-vote** (`wallet`,
-> proposed) — prove control of a Bitcoin key/coins to cast a weighted vote
-> without spending. Not implemented yet.
-
-## Nostr event model (working assumptions)
+## Nostr event model (research-backed)
 
 | Purpose | Kind | Notes |
 |---|---|---|
-| Opinion note | 1 (NIP-01) | Tagged `["t","bip110"]`, `["t","softforkwiki"]`, `["l","favour","stance"]` (NIP-32 label) |
-| Zap request | 9734 (NIP-57) | Tagged with the BIP; sent to the LNURL callback |
-| Zap receipt | 9735 (NIP-57) | Published by the LN server; we parse it back into a vote |
-| (Optional) poll | 1068 / 1018 (NIP-88) | A native two-sided poll is an alternative to zap-to-vote for favour/against — under evaluation |
+| Discussion (short) | 1 (NIP-01) | Tagged `["t","bip110"]` — lowercase per NIP-24; `#t` is relay-indexed |
+| Discussion (long-form) | 30023 (NIP-23) | Same `t` tag; deeper write-ups |
+| Poll (the vote) | 1068 (NIP-88) | Options as `["option","<id>","<label>"]`; question in content |
+| Poll response | 1018 (NIP-88) | `["e", pollId]` + `["response","<optionId>"]`; one per pubkey |
+| Zap request | 9734 (NIP-57) | Signed, sent to LNURL callback; `["e"/"a"/"k",...]` attaches it to a note/BIP; we add a stance label |
+| Zap receipt | 9735 (NIP-57) | Published by the LN server; embeds the zap request; we parse it into a vote |
+| Reaction | 7 (NIP-25) | Optional lightweight +/- |
 
 Constants live in [`packages/shared/src/nostr.ts`](../packages/shared/src/nostr.ts).
+
+## Finding BIP discussion
+
+- Query `{"kinds":[1,30023], "#t":["bip110"]}` on general relays — `#t` filters
+  are relay-indexed (NIP-01), so this is cheap and works everywhere.
+- Hashtag values must be **lowercase** (NIP-24), so `bip110`, not `BIP110`.
+- Full-text/keyword search needs a **NIP-50** relay (most relays don't implement
+  it) — e.g. `relay.nostr.band`. Our default relay list is a starting point;
+  add a NIP-50 relay when we want keyword discovery beyond the `t` tag.
 
 ## Sentiment engine (multi-provider)
 
@@ -98,11 +108,24 @@ Same prompt and same JSON schema feed both, so we can run either — or both, to
 compare — for a demo. Neither needs a heavier model (Opus / Gemini Pro) for a
 short-post stance classification.
 
-## Open questions (research folding in)
+## Research notes
 
-- **Finding discussion**: exact tag conventions people use for BIPs on Nostr, and
-  which relays carry Bitcoin-protocol discussion. Our `#bipN` + relay list is a
-  starting point.
-- **Zap-to-vote wiring**: whether to zap a per-BIP account, a canonical per-BIP
-  note, or use an existing zap-poll pattern; sybil/cost calibration.
-- **Poll vs zap**: whether NIP-88 polls (two-sided) belong alongside zap-to-vote.
+From a deep-research pass over the NIPs (TypeScript stack, `nostr-tools`/NDK):
+
+- **NIP-88** (`kind:1068`/`1018`) is the current standard poll: free, public,
+  one-vote-per-pubkey, unweighted. Best fit for favour/against/neutral.
+- **NIP-57** zaps = `kind:9734` request (signed, sent to LNURL, *not* published)
+  → `kind:9735` receipt (published after payment). `e`/`a`/`k` tags attach a zap
+  to a specific note or addressable event. Zaps are **not** sybil-resistant.
+- **NIP-69** "Zap Polls" (sats-weighted voting) was proposed but **never merged**.
+- Discovery: lowercase `t` tag (NIP-24) on `kind:1`+`kind:30023` (NIP-23),
+  indexed `#t` filters (NIP-01); full-text needs NIP-50 relays (`relay.nostr.band`).
+- Libraries: `nostr-tools` (what we use) or NDK (`@nostr-dev-kit/ndk`) for
+  events/relays/zaps/LNURL.
+
+### Next build steps (from the research)
+
+- Add a `poll.ts` to `voting`: build a `kind:1068` poll per BIP (For / Against /
+  Neutral options) and tally `kind:1018` responses (one per pubkey).
+- Keep zaps as the intensity layer; attach the zap to the poll/anchor via `e`.
+- Add a NIP-50 relay to `sentiment` for keyword discovery beyond the `t` tag.
