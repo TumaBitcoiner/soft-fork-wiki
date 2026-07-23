@@ -18,6 +18,12 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  packages/analytics:
+    dependencies:
+      '@soft-fork-wiki/shared':
+        specifier: workspace:*
+        version: link:../shared
+
   packages/sentiment:
     dependencies:
       '@anthropic-ai/sdk':
@@ -35,6 +41,21 @@ importers:
       zod:
         specifier: ^3.23.0
         version: 3.25.76
+
+  packages/service:
+    dependencies:
+      '@soft-fork-wiki/sentiment':
+        specifier: workspace:*
+        version: link:../sentiment
+      '@soft-fork-wiki/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@soft-fork-wiki/voting':
+        specifier: workspace:*
+        version: link:../voting
+      nostr-tools:
+        specifier: ^2.7.0
+        version: 2.24.1(typescript@5.9.3)
 
   packages/shared: {}
 

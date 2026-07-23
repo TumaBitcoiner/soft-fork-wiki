@@ -1,0 +1,76 @@
+/**
+ * One analysis run for a BIP: classified notes + summary + vote tally, mapped
+ * into the frontend's `SentimentData`.
+ *
+ * Why this re-composes the pipeline instead of calling `analyzeBip()`:
+ * `analyzeBip` returns only the aggregated `SentimentSummary`, which drops the
+ * individual `ClassifiedNote[]` — and those notes are exactly what the
+ * frontend's `recentNotes` is made of. Calling `analyzeBip` and then
+ * classifying again would double the LLM spend for the same BIP, so we drive
+ * the same three exported steps (`fetchBipNotes` -> `classifyNotes` ->
+ * `summarizeSentiment`) ourselves and keep both halves of the result. If
+ * `analyzeBip` ever returns its notes, collapse this back onto it.
+ */
+import {
+  classifyNotes,
+  fetchBipNotes,
+  makeClassifier,
+  summarizeSentiment,
+} from "@soft-fork-wiki/sentiment";
+import type {
+  ClassifiedNote,
+  OpinionTally,
+  SentimentSummary,
+} from "@soft-fork-wiki/shared";
+import { toSentimentData, type SentimentData } from "./adapter.js";
+import { fetchOpinionTally } from "./opinions.js";
+import type { ServiceConfig } from "./config.js";
+
+export interface BipAnalysis {
+  summary: SentimentSummary;
+  notes: ClassifiedNote[];
+  tally: OpinionTally;
+}
+
+/** Fetch, classify, summarize, and tally one BIP. Slow and LLM-billed. */
+export async function analyzeBipDetailed(
+  bipNumber: number,
+  config: ServiceConfig,
+): Promise<BipAnalysis> {
+  const classifier = makeClassifier(config.provider);
+  const computedAt = Math.floor(Date.now() / 1000);
+
+  // The tally is a cheap relay read with no LLM cost, so it runs alongside the
+  // classification pass rather than after it.
+  const [analysis, tally] = await Promise.all([
+    (async () => {
+      const events = await fetchBipNotes(bipNumber, {
+        relays: config.relays,
+        limit: config.noteLimit,
+      });
+      const notes = await classifyNotes(classifier, bipNumber, events);
+      const summary = await summarizeSentiment(classifier, bipNumber, notes, {
+        computedAt,
+      });
+      return { summary, notes };
+    })(),
+    fetchOpinionTally(bipNumber, { relays: config.relays }),
+  ]);
+
+  return { summary: analysis.summary, notes: analysis.notes, tally };
+}
+
+/** Analyze a BIP and return the exact payload the frontend consumes. */
+export async function loadSentimentData(
+  bipNumber: number,
+  config: ServiceConfig,
+): Promise<SentimentData> {
+  const { summary, notes, tally } = await analyzeBipDetailed(bipNumber, config);
+  return toSentimentData({
+    summary,
+    notes,
+    tally,
+    now: Math.floor(Date.now() / 1000),
+    recentNoteLimit: config.recentNoteLimit,
+  });
+}
