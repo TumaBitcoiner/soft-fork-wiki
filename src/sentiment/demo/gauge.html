@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Where people stand — Is this good for Bitcoin?</title>
+<style>
+  :root{
+    --paper:#F5F1E8; --ink:#111111; --orange:#F7931A;
+    --rule:#D8D2C4; --muted:#6B6459;
+    --sans:'Inter','Archivo','Helvetica Neue',Arial,sans-serif;
+    --mono:'IBM Plex Mono','SF Mono',Consolas,monospace;
+    --serif:'Newsreader',Georgia,'Times New Roman',serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+       -webkit-font-smoothing:antialiased}
+
+  .ticker{border-bottom:1px solid var(--ink);padding:9px 20px;font-family:var(--mono);
+          font-size:11px;letter-spacing:.16em;text-transform:uppercase;overflow:hidden;
+          white-space:nowrap}
+  .ticker b{color:var(--orange);font-weight:600}
+
+  .wrap{max-width:1080px;margin:0 auto;padding:40px 24px 72px}
+
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;
+           text-transform:uppercase;color:var(--muted)}
+  .eyebrow .mark{color:var(--orange)}
+
+  h1{font-size:clamp(38px,7vw,76px);font-weight:800;letter-spacing:-.035em;
+     line-height:.95;margin:10px 0 6px;text-transform:lowercase}
+  .sub{font-family:var(--serif);font-style:italic;font-size:19px;color:var(--muted);
+       margin:0 0 30px;line-height:1.5}
+
+  .picker{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px;padding:20px 0 0;
+          border-top:1px solid var(--rule)}
+  button{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+         background:transparent;color:var(--ink);border:1px solid var(--ink);
+         padding:9px 14px;cursor:pointer;border-radius:0}
+  button:hover{background:var(--ink);color:var(--paper)}
+  button[aria-pressed="true"]{background:var(--orange);border-color:var(--orange);color:#111}
+  .modes{margin-left:auto;display:flex;gap:8px}
+
+  .panel{border:1px solid var(--ink);margin-top:26px;background:#FBF8F2}
+  .phead{display:flex;justify-content:space-between;align-items:baseline;gap:16px;
+         padding:16px 22px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+  .phead h2{margin:0;font-size:13px;font-family:var(--mono);letter-spacing:.18em;
+            text-transform:uppercase;font-weight:500}
+  .stamp{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.08em}
+
+  .body{padding:30px 22px 26px}
+
+  /* gauge */
+  .gauge{position:relative;margin:14px 0 8px}
+  .scale{position:relative;height:54px;border-left:1px solid var(--ink);
+         border-right:1px solid var(--ink)}
+  .axis{position:absolute;top:26px;left:0;right:0;height:1px;background:var(--ink)}
+  .tick{position:absolute;top:20px;width:1px;height:13px;background:var(--rule)}
+  .tick.mid{top:14px;height:25px;background:var(--ink)}
+  .needle{position:absolute;top:2px;width:3px;height:50px;background:var(--orange);
+          transition:left .5s cubic-bezier(.2,.8,.2,1)}
+  .needle::after{content:'';position:absolute;top:-7px;left:-4px;width:11px;height:11px;
+                 background:var(--orange)}
+  .ends{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;
+        letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:8px}
+
+  .reading{display:flex;align-items:baseline;gap:14px;margin:26px 0 4px;flex-wrap:wrap}
+  .score{font-size:64px;font-weight:800;letter-spacing:-.04em;line-height:1;
+         font-variant-numeric:tabular-nums}
+  .lean{font-family:var(--serif);font-style:italic;font-size:21px;color:var(--muted)}
+
+  .counts{display:flex;gap:26px;flex-wrap:wrap;margin:22px 0 0;padding-top:18px;
+          border-top:1px solid var(--rule);font-family:var(--mono);font-size:13px}
+  .counts div span{display:block;font-size:11px;letter-spacing:.12em;color:var(--muted);
+                   text-transform:uppercase;margin-bottom:5px}
+  .counts b{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+
+  .narrative{font-family:var(--serif);font-size:18px;line-height:1.62;margin:26px 0 0;
+             padding-top:20px;border-top:1px solid var(--rule)}
+
+  .notes{margin-top:26px;padding-top:20px;border-top:1px solid var(--rule)}
+  .note{padding:13px 0;border-bottom:1px dotted var(--rule);display:grid;
+        grid-template-columns:112px 1fr;gap:14px;align-items:start}
+  .note:last-child{border-bottom:0}
+  .who{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.5}
+  .choice{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+          text-transform:uppercase;border:1px solid var(--rule);padding:2px 6px;margin-top:5px}
+  .choice.For{border-color:var(--orange);color:#8a5200}
+  .txt{font-size:14.5px;line-height:1.55;white-space:pre-wrap}
+
+  .empty{font-family:var(--serif);font-style:italic;font-size:19px;color:var(--muted);
+         padding:26px 0}
+  .warn{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;color:#8a5200;
+        border:1px solid var(--orange);padding:11px 14px;margin-top:22px;line-height:1.6}
+  .foot{margin-top:26px;font-family:var(--mono);font-size:11px;color:var(--muted);
+        letter-spacing:.06em;line-height:1.8}
+  .spin{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.1em;
+        text-transform:uppercase}
+</style>
+</head>
+<body>
+
+<div class="ticker">
+  <b>&#9654; LIVE</b> &nbsp;•&nbsp; TORONTO, CANADA &nbsp;•&nbsp; THE GREAT HALL
+  &nbsp;•&nbsp; REACHES CONSENSUS &nbsp;•&nbsp; READ FROM NOSTR &nbsp;•&nbsp;
+  NO SIDES &nbsp;•&nbsp; JULY 2026
+</div>
+
+<div class="wrap">
+  <div class="eyebrow"><span class="mark">§</span> WHERE PEOPLE STAND</div>
+  <h1>is this good for bitcoin?</h1>
+  <p class="sub"><b style="font-style:normal;font-weight:700">Phase 1</b> counts the sats
+     people zapped for and against — straight off the relays, no AI, milliseconds.
+     <b style="font-style:normal;font-weight:700">Phase 2</b> reads what they are actually
+     arguing about. We host the debate. We never tell you the answer.</p>
+
+  <div class="picker">
+    <button data-bip="300" aria-pressed="true">BIP 300 &middot; Drivechains</button>
+    <button data-bip="360">BIP 360 &middot; Quantum</button>
+    <button data-bip="444">BIP 444 &middot; Datacarrier</button>
+    <button data-bip="119">BIP 119 &middot; CTV</button>
+    <span class="modes">
+      <button data-mode="zaps">Phase 1 &middot; Zaps</button>
+      <button data-mode="llm" aria-pressed="true">Phase 2 &middot; The argument</button>
+    </span>
+  </div>
+
+  <div class="panel">
+    <div class="phead">
+      <h2 id="ph">Where people stand</h2>
+      <div class="stamp" id="stamp">—</div>
+    </div>
+    <div class="body" id="out">
+      <div class="spin">Reading the relays…</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    SERVICE &nbsp;http://localhost:8002 &nbsp;·&nbsp; GAUGE = (good &minus; not good) /
+    (good + not good) &nbsp;·&nbsp; NEUTRALS EXCLUDED FROM THE DENOMINATOR<br>
+    THE SCORE IS A NET LEAN, NOT A SHARE OF PEOPLE.
+  </div>
+</div>
+
+<script>
+const BASE = 'http://localhost:8002';
+let bip = 300, mode = 'llm';
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+document.querySelectorAll('[data-bip]').forEach(b => b.onclick = () => {
+  bip = +b.dataset.bip;
+  document.querySelectorAll('[data-bip]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  load();
+});
+document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => {
+  mode = b.dataset.mode;
+  document.querySelectorAll('[data-mode]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  load();
+});
+
+function lean(score, sided) {
+  if (!sided) return 'not enough to call it';
+  if (score >= 60) return 'leaning good for Bitcoin';
+  if (score >= 20) return 'leaning good, but not settled';
+  if (score > -20) return 'genuinely split';
+  if (score > -60) return 'leaning against';
+  return 'leaning strongly against';
+}
+
+function render(d, ms) {
+  const c = d.counts || {favour:0, against:0, neutral:0};
+  const sided = (c.favour || 0) + (c.against || 0);
+  const n = d.sampleSize || 0;
+  $('#stamp').textContent =
+    `${d.mode === 'llm' ? 'PHASE 2 · READ THE ARGUMENT' : 'PHASE 1 · COUNT THE ZAPS'} · ${ms} MS`;
+
+  // Nothing found at all: say so plainly rather than drawing a needle at 0,
+  // because "nobody weighed in" and "evenly split" are different answers.
+  if (!n && !d.totalVotes) {
+    $('#out').innerHTML = `<div class="empty">No one has weighed in on BIP ${bip} yet.
+      Be the first to add a signal.</div>
+      <div class="warn">PHASE 1 counts sats zapped for and against, straight off the
+      relays — no LLM, ${ms} ms. Nothing has been zapped yet, so there is nothing to
+      count. That is the honest answer, not an error.<br><br>
+      Switch to PHASE 2 to read what people are already arguing about.</div>`;
+    return;
+  }
+
+  const pos = ((d.score + 100) / 200) * 100;
+  const ticks = [0,10,20,30,40,50,60,70,80,90,100]
+    .map(p => `<div class="tick${p===50?' mid':''}" style="left:${p}%"></div>`).join('');
+
+  const notes = (d.recentNotes || []).slice(0, 4).map(nt => `
+    <div class="note">
+      <div class="who">${esc(nt.author)}<br>
+        <span class="choice ${esc(nt.choice)}">${esc(nt.choice)}</span></div>
+      <div class="txt">${esc(String(nt.note).slice(0, 240))}</div>
+    </div>`).join('');
+
+  $('#out').innerHTML = `
+    <div class="gauge">
+      <div class="scale">${ticks}<div class="axis"></div>
+        <div class="needle" style="left:${pos}%"></div></div>
+      <div class="ends"><span>&#128078; Not good</span><span>Split</span>
+        <span>Good for Bitcoin &#128077;</span></div>
+    </div>
+
+    <div class="reading">
+      <div class="score">${d.score > 0 ? '+' : ''}${d.score}</div>
+      <div class="lean">${lean(d.score, sided)}</div>
+    </div>
+
+    <div class="counts">
+      <div><span>Posts read</span><b>${n}</b></div>
+      <div><span>&#128077; Good</span><b>${c.favour || 0}</b></div>
+      <div><span>&#128078; Not good</span><b>${c.against || 0}</b></div>
+      <div><span>&#129300; Not sure</span><b>${c.neutral || 0}</b></div>
+      <div><span>Zapped</span><b>${(d.totalSats || 0).toLocaleString()}<span
+        style="font-size:11px"> sats</span></b></div>
+    </div>
+
+    ${d.narrative ? `<div class="narrative">${esc(d.narrative)}</div>` : ''}
+    ${notes ? `<div class="notes">${notes}</div>` : ''}
+
+    ${sided < 5 ? `<div class="warn">ONLY ${sided} PEOPLE TOOK A SIDE — the needle is
+      extreme because the sample is tiny, not because opinion is. Treat as indicative.</div>` : ''}
+  `;
+}
+
+async function load() {
+  $('#ph').textContent = `Where people stand · BIP ${bip}`;
+  $('#out').innerHTML = `<div class="spin">Reading the relays…${
+    mode === 'llm' ? ' first read of a busy proposal can take a minute' : ''}</div>`;
+  const t0 = performance.now();
+  try {
+    const r = await fetch(`${BASE}/sentiment/${bip}?mode=${mode}`);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    render(await r.json(), Math.round(performance.now() - t0));
+  } catch (e) {
+    $('#out').innerHTML = `<div class="empty">Couldn't reach the sentiment service.</div>
+      <div class="warn">${esc(e.message)} — is it running on ${BASE}?<br>
+      cd src/sentiment &amp;&amp; npx pnpm@9 --filter @soft-fork-wiki/service dev</div>`;
+  }
+}
+load();
+</script>
+</body>
+</html>
