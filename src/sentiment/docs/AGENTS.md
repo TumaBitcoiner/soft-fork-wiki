@@ -115,6 +115,83 @@ call it on render.
   reports **sats** (`zappedSatsFavour` / `zappedSatsAgainst`).
 - `netScore` on `SentimentSummary` is −1 (all against) .. +1 (all in favour).
 
+## The sentiment gauge — what it means and how to label it
+
+We read every Nostr note we can find about a BIP, classify each one as in
+favour / against / neutral, and report the **net result**. That net result is
+the gauge.
+
+```ts
+const sided   = favour + against;            // neutrals excluded, see below
+const netScore = sided === 0 ? 0 : (favour - against) / sided;
+// served as SentimentData.score, rescaled to -100 .. +100
+```
+
+**Neutrals are deliberately excluded from the denominator.** The gauge answers
+"among people who took a side, which way does it lean?" — a wall of neutral
+notes should not drag the needle to the middle when the people with a view
+agree.
+
+**`score` is NOT a percentage of people, and must never be labelled as one.**
+Worked example from a real run, BIP 360:
+
+| | value |
+|---|---|
+| notes analysed | 10 |
+| favour / against / neutral | 5 / 1 / 4 |
+| share of all notes in favour | 50% |
+| share of *side-taking* notes in favour | 83% |
+| **`score` (the gauge)** | **+67** |
+
+Three different numbers. "67% in favour" is wrong on every reading of it.
+
+Note also that `SentimentData.for` / `against` / `neutral` are percentages of
+**all** notes (50 / 10 / 40 here) and so will not agree with `score`. Both are
+correct; they answer different questions. Shown together unlabelled they look
+like a contradiction.
+
+### Labels — use the product's words, not ours
+
+`Stance` values are internal. On screen they read as the vote buttons do:
+
+| internal | on screen |
+|---|---|
+| `favour` | 👍 Good for Bitcoin |
+| `against` | 👎 Not good |
+| `neutral` | 🤔 Not sure yet |
+
+Section header is **"Where people stand"**. Never show the raw words
+"favour / against / neutral" or a bare `netScore` — those are our plumbing.
+
+### Copy that matches the arithmetic
+
+> ### Where people stand
+> We read 10 posts on Nostr about this one.
+> **5** said good for Bitcoin · **1** said not good · **4** weren't sure.
+
+The gauge needle is `score`; the sentence underneath is what makes it
+trustworthy. Show the sample size every time — a needle with no counts next to
+it is exactly the "is this just another site with an agenda?" objection.
+
+Thin discussion, under ~5 people taking a side:
+
+> ### Where people stand
+> Only a couple of people have posted about this so far — not enough to call it.
+
+**Stay off the fence-line.** Report where people stand; never grade the
+proposal. "Most people think this is good for Bitcoin" is fine — it's a fact
+about people. "This looks good for Bitcoin" is not, ever. Same rule in the
+narrative text the LLM writes.
+
+**Data-quality caveat, and it is a real one:** notes are found by the
+`#bip<N>` hashtag, which catches general enthusiasm alongside genuine
+analysis. A real note from the live BIP 110 run read *"Bitcoin breaks the
+centralizing slavery chains and continues as Freedom Money for the whole
+Humanity #BIP110"* — classified `favour` at 0.9 confidence, while arguing
+nothing about the proposal itself. The gauge measures **tagged sentiment**,
+not informed technical opinion. "We read the posts and counted them up" is
+honest; "the community has reviewed this" is not.
+
 ## Types to import
 From `@soft-fork-wiki/shared` — do not redeclare these in the frontend:
 

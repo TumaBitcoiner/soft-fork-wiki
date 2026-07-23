@@ -1,90 +1,73 @@
 /**
- * Rank classified notes and pick the strongest point of view per stance.
+ * Rank classified notes and pick the best point of view per stance.
  *
  * The product question is "what are the best arguments for and against BIP N?",
- * not "who posted last". Reverse-chronological ordering answers the second
- * question, so instead we score every note and surface the top few in each
- * stance bucket — giving the UI a balanced "best case for / best case against /
- * best neutral read".
+ * not "who posted last". So we rank by what the network paid attention to.
  *
- * ## What `confidence` is, and what it is not
+ * ## Zaps are the vote
  *
- * `ClassifiedNote.confidence` is easy to misread as a quality score. It is not.
- * `providers/prompt.ts` asks the model for "the author's stance, a confidence
- * from 0 to 1" — certainty about *which label applies*, nothing else. A note
- * saying "ACK" is trivially classifiable, so it scores high confidence while
- * containing no argument at all. Treating that number as quality actively
- * rewards filler: the emptier the note, the easier the label.
+ * `zapSats` is the primary input. A zap is a Lightning payment attached to a
+ * note (NIP-57), so it is a vote that cost the voter real money. That is a far
+ * better signal than anything we could compute from the text, and it makes
+ * spam self-limiting: flooding the board costs sats and earns none back. We do
+ * not judge argument quality algorithmically — the market does it for us.
  *
- * So confidence is used here only as a *trust filter* on the stance bucket. A
- * note the classifier was unsure about is probably filed under the wrong
- * stance, and a misfiled note in a "best case against" list is worse than an
- * empty slot. Above the trust threshold, extra confidence earns nothing.
+ * Reactions (NIP-25) and replies come second: real signal, but free, so easier
+ * to manufacture.
  *
- * ## What actually ranks a note
+ * ## Cold start
  *
- * Substance, multiplicatively. A note with no argument has no business being
- * the best case for anything, so substance gates the score rather than
- * competing with other terms — no amount of freshness or classifier certainty
- * can lift a contentless note over a reasoned one.
+ * Recency is a tiebreaker and, deliberately, the *only* fallback. Until zap and
+ * reaction data is wired into `EngagementSignals`, every engagement term is
+ * zero for every note and the ranking collapses cleanly to newest-first. That
+ * is the state the demo opens in — see `scoreNote`.
  *
- * Recency is a small multiplicative lift that can only reorder notes of
- * comparable substance (see `RECENCY_LIFT`).
+ * ## Confidence is not part of the score
  *
- * ## What we cannot measure yet
- *
- * Engagement is the signal we want — a note the network reacted to or zapped is
- * a note the network itself rated, which beats any heuristic here — but nothing
- * collects it: `fetch.ts` queries kind:1 notes only and never touches NIP-25
- * reactions (kind:7) or NIP-57 zap receipts (kind:9735). Rather than pretend,
- * `EngagementSignals` is optional, `undefined` for every note today, and
- * contributes exactly zero. Populating it during fetch is the one change needed
- * to switch real crowd signal on.
+ * `ClassifiedNote.confidence` is the classifier's certainty about *which stance
+ * label applies* (see `providers/prompt.ts`), not a measure of the argument. It
+ * is used only to filter: a note the classifier was unsure about is probably in
+ * the wrong bucket, and a note filed under "against" while it argues in favour
+ * is worse than a missing note. That is classification hygiene, not quality
+ * judgement.
  */
 import type { ClassifiedNote, Stance } from "@soft-fork-wiki/shared";
 
 /**
- * Crowd signals for a single note.
+ * What the network did with a note.
  *
- * NOT WIRED YET — see the module comment. Every field is optional so a caller
- * can supply whichever signal it manages to collect first (reactions are the
- * cheapest, zaps are the most meaningful) without waiting for the full set.
+ * Not populated yet — `fetch.ts` queries kind:1 only. Every field is optional
+ * so a caller can supply whichever signal it collects first; absent means zero,
+ * never an error.
  */
 export interface EngagementSignals {
-  /** NIP-25 reactions (kind:7) pointing at this note. */
-  reactions?: number;
-  /** Replies to this note (kind:1 carrying an `e` tag). */
-  replies?: number;
-  /** Total sats zapped to this note (NIP-57, kind:9735 receipts). */
+  /**
+   * Total sats zapped to this note (NIP-57 receipts, kind:9735). THE PRIMARY
+   * RANKING INPUT — this is the paid vote.
+   */
   zapSats?: number;
+  /** NIP-25 reactions (kind:7) pointing at this note. Free signal, secondary. */
+  reactions?: number;
+  /** Replies to this note (kind:1 carrying an `e` tag). Secondary. */
+  replies?: number;
 }
 
-/** A classified note plus whatever crowd signal we have collected for it. */
+/** A classified note plus what the network did with it. */
 export interface RankableNote extends ClassifiedNote {
   engagement?: EngagementSignals;
 }
 
-/**
- * The raw 0..1 signals behind a score, before they are combined.
- *
- * Exposed because "why is this the top argument?" is a fair question from the
- * UI, and because it makes the combination tunable without re-deriving
- * anything. See `scoreNote` for how they multiply.
- */
+/** The raw 0..1 signals behind a score, so the UI can explain a ranking. */
 export interface ScoreComponents {
-  /** Substance of the note text. The dominant term. */
-  substance: number;
-  /** Trust in the stance label, after the missing-value fallback. */
-  confidence: number;
-  /** Recency, decayed by half-life. Only ever a small lift. */
+  zaps: number;
+  reactions: number;
+  replies: number;
   recency: number;
-  /** Crowd signal. Always 0 until engagement is wired. */
-  engagement: number;
 }
 
 export interface ScoredNote {
   note: RankableNote;
-  /** 0..~1.1 today; up to ~1.5 once engagement is populated. */
+  /** 0..1. */
   score: number;
   components: ScoreComponents;
 }
@@ -95,7 +78,7 @@ export interface RankOptions {
    * does with `computedAt`) so a ranking is reproducible and testable.
    */
   now?: number;
-  /** Days after which the recency lift halves. */
+  /** Days after which the recency component halves. */
   halfLifeDays?: number;
 }
 
@@ -104,102 +87,42 @@ export interface TopNotesOptions extends RankOptions {
   perStance?: number;
   /** Cap on notes from one pubkey within a single stance bucket. */
   maxPerAuthor?: number;
-  /** Exclude notes the classifier was less sure about than this. */
+  /** Exclude notes whose stance label the classifier was unsure about. */
   minConfidence?: number;
-  /** Exclude notes carrying less argument than this. */
-  minSubstance?: number;
 }
 
 /** Best notes per stance. All three keys always exist, possibly empty. */
 export type TopNotesByStance = Record<Stance, ScoredNote[]>;
 
 /**
- * Recency multiplies the score by at most 1.10, so it can only reorder notes
- * whose substance is within ~9% of each other (1 / 1.10 = 0.909). Any material
- * difference in substance survives any difference in age — a six-month-old
- * argument outranks a shallower one posted this morning, which is the entire
- * reason we rank instead of sorting by `createdAt`.
+ * Weights, in the priority order the product calls for: paid votes dominate,
+ * free signal follows, recency only breaks ties. They sum to 1.
+ *
+ * The gap between zaps and recency is what makes this a ranking rather than a
+ * feed: a note carrying a real zap outranks anything posted since.
  */
-const RECENCY_LIFT = 0.1;
+const WEIGHT_ZAPS = 0.6;
+const WEIGHT_REACTIONS = 0.25;
+const WEIGHT_REPLIES = 0.05;
+const WEIGHT_RECENCY = 0.1;
+
+/**
+ * Counts at which each signal has earned most of its credit. Log-saturating, so
+ * the interesting difference is between 0 and 10 reactions rather than between
+ * 100 and 110, and one viral note cannot own the top slot forever.
+ */
+const ZAP_SAT_SATURATION = 10_000;
+const REACTION_SATURATION = 25;
+const REPLY_SATURATION = 10;
 
 /**
  * A month keeps a whole cycle of discussion roughly comparable, which matters
- * because BIP debate has a long tail — the argument from the original
- * mailing-list thread is often still the best one.
+ * because BIP debate has a long tail.
  */
 const DEFAULT_HALF_LIFE_DAYS = 30;
 
-/**
- * At or above this confidence the stance label is taken at face value and no
- * damping applies. Deliberately flat above the threshold: a 0.95 label is not a
- * better *argument* than a 0.6 label, only a more certain filing.
- */
-const CONFIDENCE_TRUSTED = 0.5;
-
-/**
- * Below this the label is not trustworthy enough to show under a stance
- * heading. This is the same number as `DEFAULT_MIN_CONFIDENCE` on purpose:
- * filtering and damping are one mechanism, not two knobs that can drift apart.
- */
-const CONFIDENCE_MIN_TRUST = 0.35;
-
-/**
- * Multiplier for a note that fails the trust threshold. Flat rather than a
- * ramp — there is no meaningful ordering *among* labels we do not believe.
- * `topNotesByStance` drops these outright; this only affects callers using
- * `rankNotes` directly.
- */
-const CONFIDENCE_UNTRUSTED_DAMP = 0.25;
-
-/**
- * Multiplier at the trust threshold, ramping to 1 at `CONFIDENCE_TRUSTED`.
- * Held close to 1 deliberately: across every note that survives filtering,
- * confidence can shift a score by at most 1/0.85 = 1.18x. That keeps it a
- * nudge between comparable notes rather than a ranking term competing with
- * substance — which is the whole point, given confidence measures label
- * certainty and not argument quality.
- */
-const CONFIDENCE_MARGINAL_DAMP = 0.85;
-
-/**
- * Used when the classifier reported no usable confidence — a note is not worse
- * for a field the provider omitted.
- *
- * Note this deliberately also covers an exact `0`. `parseStanceJson` in
- * providers/prompt.ts does `Number(obj.confidence) || 0`, which collapses
- * "field absent", "unparseable" and "NaN" all into `0`. A model that has just
- * committed to a stance essentially never volunteers 0.0, so an exact zero is
- * far more likely to be that coercion than a real self-report. Reading it as
- * maximal distrust would silently delete every note from a provider whose JSON
- * hiccuped.
- */
-const FALLBACK_CONFIDENCE = 0.5;
-
 /** Used when `createdAt` is unusable: neither reward nor punish the note. */
 const UNKNOWN_RECENCY = 0.5;
-
-/** Distinct-word count beyond which extra words stop earning score. */
-const SUBSTANCE_SATURATION_WORDS = 60;
-
-/** Below this, a note is a reaction ("nack", "gm"), not a point of view. */
-const MIN_POV_WORDS = 4;
-
-/**
- * Engagement stays additive on top of the gated base, so that turning it on
- * later cannot silently rescale scores for notes that still lack it.
- *
- * KNOWN TENSION for whoever wires this up: because it is additive, it is the
- * one path by which a contentless note could climb a bucket ("gm" with 500
- * reactions). That is arguably right — the crowd rating a note beats our
- * heuristic reading of it — but if it proves wrong in practice, multiply this
- * term by `components.substance` too rather than shrinking the constant.
- */
-const WEIGHT_ENGAGEMENT = 0.4;
-
-/** Counts at which each engagement signal has earned most of its credit. */
-const REACTION_SATURATION = 25;
-const REPLY_SATURATION = 10;
-const ZAP_SAT_SATURATION = 10_000;
 
 const DEFAULT_PER_STANCE = 3;
 
@@ -210,74 +133,60 @@ const DEFAULT_PER_STANCE = 3;
  */
 const DEFAULT_MAX_PER_AUTHOR = 1;
 
+/** Below this, the stance label is not trustworthy enough to file under. */
+const DEFAULT_MIN_CONFIDENCE = 0.35;
+
 /**
- * Selection thresholds. A misfiled note, or a contentless one presented as "the
- * best case against", is worse than a short list — so both are excluded
- * outright rather than merely ranked low.
+ * Used when the classifier reported no usable confidence — a note is not worse
+ * for a field the provider omitted.
  *
- * The substance floor is set just above a single distinct word (0.042), so it
- * removes "gm" and "ACK ACK ACK..." while keeping terse but real positions like
- * "NACK, breaks existing wallets" (0.392).
+ * This deliberately also covers an exact `0`. `parseStanceJson` in
+ * providers/prompt.ts does `Number(obj.confidence) || 0`, which collapses
+ * "field absent", "unparseable" and "NaN" all into `0`. A model that has just
+ * committed to a stance essentially never volunteers 0.0, so an exact zero is
+ * far more likely to be that coercion than a real self-report. Reading it as
+ * maximal distrust would silently delete every note from a provider whose JSON
+ * hiccuped.
  */
-const DEFAULT_MIN_CONFIDENCE = CONFIDENCE_MIN_TRUST;
-const DEFAULT_MIN_SUBSTANCE = 0.08;
+const FALLBACK_CONFIDENCE = 0.5;
 
 const STANCES: readonly Stance[] = ["favour", "against", "neutral"];
-
-/** Things that carry no argument and should not count towards substance. */
-const URL_PATTERN = /https?:\/\/\S+/gi;
-const NOSTR_REF_PATTERN =
-  /(?:nostr:)?(?:npub|note|nevent|nprofile|naddr)1[023456789acdefghjklmnpqrstuvwxyz]+/gi;
-const HASHTAG_PATTERN = /(?:^|\s)#[\w-]+/g;
-
-/**
- * Scripts written without spaces between words. Splitting these on whitespace
- * yields one enormous "word", which made a full Japanese or Chinese argument
- * measure as less substantial than a four-word English one (0.253 vs 0.659 on
- * equivalent text) — i.e. we were quietly ranking non-Latin scripts out of
- * "best point of view" on a global network. Their characters are counted as
- * sub-word units instead.
- */
-const SCRIPTLESS_PATTERN =
-  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Thai}]/gu;
-
-/** Rough morphemes per word in those scripts. */
-const SCRIPTLESS_CHARS_PER_WORD = 2;
 
 /**
  * Score one note.
  *
- *   score = substance x recencyLift x confidenceDamping + engagement
- *
- * Substance leads and the other two only scale it, so the ordering question is
- * always "which note argues more", with age and label-trust breaking ties.
+ *   score = 0.60 x zaps + 0.25 x reactions + 0.05 x replies + 0.10 x recency
  *
  * Never throws: every field is treated as untrusted, because `confidence`,
- * `createdAt` and `content` all originate from an LLM response or a relay we do
- * not control.
+ * `createdAt` and `engagement` all originate from an LLM response or a relay we
+ * do not control.
  */
 export function scoreNote(
   note: RankableNote,
   opts: RankOptions = {},
 ): ScoredNote {
-  const now = resolveNow(opts.now);
-  const halfLifeDays = positiveNumber(opts.halfLifeDays, DEFAULT_HALF_LIFE_DAYS);
-
+  const engagement = note?.engagement;
   const components: ScoreComponents = {
-    substance: substanceScore(
-      typeof note?.content === "string" ? note.content : "",
+    zaps: saturating(engagement?.zapSats, ZAP_SAT_SATURATION),
+    reactions: saturating(engagement?.reactions, REACTION_SATURATION),
+    replies: saturating(engagement?.replies, REPLY_SATURATION),
+    recency: recencyScore(
+      note?.createdAt,
+      resolveNow(opts.now),
+      positiveNumber(opts.halfLifeDays, DEFAULT_HALF_LIFE_DAYS),
     ),
-    confidence: confidenceScore(note?.confidence),
-    recency: recencyScore(note?.createdAt, now, halfLifeDays),
-    engagement: engagementScore(note?.engagement),
   };
 
-  const gated =
-    components.substance *
-    (1 + RECENCY_LIFT * components.recency) *
-    confidenceDamping(components.confidence);
+  const paidAttention =
+    WEIGHT_ZAPS * components.zaps +
+    WEIGHT_REACTIONS * components.reactions +
+    WEIGHT_REPLIES * components.replies;
 
-  const score = gated + WEIGHT_ENGAGEMENT * components.engagement;
+  // COLD START: with nothing zapped or reacted to anywhere, `paidAttention` is
+  // 0 for every note and the score reduces to `WEIGHT_RECENCY * recency` — a
+  // pure newest-first ordering. That is intentional, and is the state the demo
+  // opens in.
+  const score = paidAttention + WEIGHT_RECENCY * components.recency;
 
   return { note, score, components };
 }
@@ -325,9 +234,7 @@ export function rankNotes(
  * Buckets are filled independently, so a lopsided BIP still yields the
  * strongest minority argument instead of burying it under the majority — which
  * is the whole point of showing "best case for" next to "best case against".
- * A stance nobody expressed comes back empty, as does one where every note was
- * filler; an empty slot is more honest than promoting "ACK" to headline
- * argument.
+ * A stance nobody expressed comes back empty.
  */
 export function topNotesByStance(
   notes: readonly RankableNote[],
@@ -336,12 +243,10 @@ export function topNotesByStance(
   const perStance = positiveInt(opts.perStance, DEFAULT_PER_STANCE);
   const maxPerAuthor = positiveInt(opts.maxPerAuthor, DEFAULT_MAX_PER_AUTHOR);
   const minConfidence = threshold(opts.minConfidence, DEFAULT_MIN_CONFIDENCE);
-  const minSubstance = threshold(opts.minSubstance, DEFAULT_MIN_SUBSTANCE);
 
   const grouped: TopNotesByStance = { favour: [], against: [], neutral: [] };
   for (const scored of rankNotes(notes, opts)) {
-    if (scored.components.confidence < minConfidence) continue;
-    if (scored.components.substance < minSubstance) continue;
+    if (confidenceScore(scored.note?.confidence) < minConfidence) continue;
     grouped[normaliseStance(scored.note?.stance)].push(scored);
   }
 
@@ -392,67 +297,14 @@ function pickDiverse(
   return picked;
 }
 
-/**
- * How much argument a note carries, 0..1. The dominant ranking term.
- *
- * Length is measured in *distinct* meaningful words, which is the repetition
- * penalty: "ACK ACK ACK ... ACK" counts as one word, not sixteen, and so scores
- * like the one-word note it really is. That is cheaper and less arbitrary than
- * a separate variety multiplier with a floor, and it degrades gracefully — a
- * long note that merely reuses stopwords loses only those repeats.
- *
- * Growth is logarithmic, so a 600-word essay is not worth ten times a tight
- * 60-word argument; past saturation, more words earn nothing. Below
- * `MIN_POV_WORDS` a ramp (not a hard cutoff) takes over, so "NACK, breaks
- * existing wallets" is not treated the same as "nack".
- *
- * URLs, hashtags and nostr references are stripped first: "#bip110 <link>" is a
- * pointer, not an opinion, and should not read as a long note.
- */
-function substanceScore(content: string): number {
-  const distinct = distinctUnits(content);
-  if (distinct === 0) return 0;
-
-  const length = clamp01(
-    Math.log1p(distinct) / Math.log1p(SUBSTANCE_SATURATION_WORDS),
-  );
-  const brevityFactor = Math.min(1, distinct / MIN_POV_WORDS);
-
-  return clamp01(length * brevityFactor);
+/** Log-saturating 0..1 curve. Missing, negative and junk values score 0. */
+function saturating(value: number | undefined, saturationPoint: number): number {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+    return 0;
+  }
+  return clamp01(Math.log1p(value) / Math.log1p(saturationPoint));
 }
 
-/**
- * Count the distinct meaningful units in a note: whitespace-delimited words,
- * plus an estimate for scripts that do not delimit words (see
- * `SCRIPTLESS_PATTERN`). Scriptless characters are removed before word
- * splitting so the two paths cannot double-count the same run of text.
- *
- * Distinctness is applied to both paths, so repetition earns nothing either
- * way: "ACK ACK ACK..." is one unit, and so is the same character repeated
- * twenty times.
- */
-function distinctUnits(content: string): number {
-  const stripped = content
-    .replace(URL_PATTERN, " ")
-    .replace(NOSTR_REF_PATTERN, " ")
-    .replace(HASHTAG_PATTERN, " ")
-    .toLowerCase();
-
-  const scriptlessChars = new Set(stripped.match(SCRIPTLESS_PATTERN) ?? []).size;
-  const words = new Set(
-    stripped
-      .replace(SCRIPTLESS_PATTERN, " ")
-      .split(/[^\p{L}\p{N}'-]+/u)
-      .filter((w) => w.length > 0),
-  ).size;
-
-  return words + Math.round(scriptlessChars / SCRIPTLESS_CHARS_PER_WORD);
-}
-
-/**
- * Exponential decay on a half-life, consumed only as a small multiplicative
- * lift — see `RECENCY_LIFT` for the bound on how much it can reorder.
- */
 function recencyScore(
   createdAt: number,
   now: number,
@@ -465,53 +317,7 @@ function recencyScore(
   // them as brand new rather than letting a bad timestamp win the ranking.
   if (ageSeconds <= 0) return 1;
 
-  const ageDays = ageSeconds / 86_400;
-  return clamp01(Math.pow(0.5, ageDays / halfLifeDays));
-}
-
-/**
- * Confidence as trust in the *stance label*, never as quality — see the module
- * comment.
- *
- * Three regions, not a smooth curve: trusted (no effect), marginal (a nudge of
- * at most 1.18x, `CONFIDENCE_MARGINAL_DAMP`), and untrusted (a cliff, because a
- * note in the wrong bucket misrepresents the debate and does not deserve to be
- * ranked among notes that belong there).
- */
-function confidenceDamping(confidence: number): number {
-  if (confidence >= CONFIDENCE_TRUSTED) return 1;
-  if (confidence < CONFIDENCE_MIN_TRUST) return CONFIDENCE_UNTRUSTED_DAMP;
-
-  const span = CONFIDENCE_TRUSTED - CONFIDENCE_MIN_TRUST;
-  const position = (confidence - CONFIDENCE_MIN_TRUST) / span;
-  return CONFIDENCE_MARGINAL_DAMP + (1 - CONFIDENCE_MARGINAL_DAMP) * position;
-}
-
-/**
- * Crowd signal. Returns 0 for every note today — nothing populates
- * `EngagementSignals` yet — and exists so the wiring has a defined shape to
- * land in.
- *
- * Each signal saturates logarithmically: one loud note should not permanently
- * own the top slot, and the interesting difference is between 0 and 10
- * reactions, not between 100 and 110. Zaps carry the largest share because they
- * cost the sender something and are the hardest signal to fake.
- */
-function engagementScore(engagement?: EngagementSignals): number {
-  if (!engagement || typeof engagement !== "object") return 0;
-
-  const reactions = saturating(engagement.reactions, REACTION_SATURATION);
-  const replies = saturating(engagement.replies, REPLY_SATURATION);
-  const zaps = saturating(engagement.zapSats, ZAP_SAT_SATURATION);
-
-  return clamp01(0.35 * reactions + 0.2 * replies + 0.45 * zaps);
-}
-
-function saturating(value: number | undefined, saturationPoint: number): number {
-  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
-    return 0;
-  }
-  return clamp01(Math.log1p(value) / Math.log1p(saturationPoint));
+  return clamp01(Math.pow(0.5, ageSeconds / 86_400 / halfLifeDays));
 }
 
 /** See `FALLBACK_CONFIDENCE` for why a zero is read as "not reported". */
