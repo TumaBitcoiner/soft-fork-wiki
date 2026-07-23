@@ -3,6 +3,15 @@ import { simulationProvider } from './simulationProvider';
 
 const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
 
+/**
+ * Sentiment comes from a different service to the BIPs API, so it needs its
+ * own origin — `VITE_API_BASE_URL` points at the Python backend on :8000 and
+ * cannot serve both. It sends permissive CORS headers, so no proxy is needed.
+ */
+const sentimentBaseUrl = (
+  import.meta.env.VITE_SENTIMENT_BASE_URL || 'http://localhost:8002'
+).replace(/\/$/, '');
+
 export class ApiUnavailableError extends Error {
   constructor(feature: string) {
     super(`${feature} is not available from the local HTTP backend yet.`);
@@ -10,8 +19,8 @@ export class ApiUnavailableError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${baseUrl}${path}`, {
+async function request<T>(path: string, init?: RequestInit, origin = baseUrl): Promise<T> {
+  const response = await fetch(`${origin}${path}`, {
     ...init,
     headers: { 'Content-Type': 'application/json', ...init?.headers },
   });
@@ -91,7 +100,24 @@ export const httpProvider: ApiProvider = {
   getBipMetadata: (bipNumber) => request(`/api/bips/${bipNumber}/meta`),
   askBips: unavailable('Ask Anything'),
   getTimeline: unavailable('Timeline'),
-  getSentiment: unavailable('Sentiment'),
+  /**
+   * Live from the sentiment service. The gauge is computed from zaps and votes
+   * read off the Nostr relays — no LLM in this path, so it returns in well
+   * under a second. `?mode=llm` opts into classifying public discussion
+   * instead, which is slower and not what the demo uses.
+   *
+   * The service returns extra fields beyond SentimentData (satsScore,
+   * voteScore, hasSignal, mode...). They are additive and ignored here; see
+   * src/sentiment/docs/AGENTS.md before rendering the gauge, because `score`
+   * is a net lean and NOT a percentage of people.
+   */
+  getSentiment: (bipNumber) =>
+    request(`/sentiment/${bipNumber}`, undefined, sentimentBaseUrl),
+  /**
+   * Still unavailable, and deliberately so: recording a vote means publishing
+   * a signed Nostr event, which needs the user's key. That belongs in the
+   * browser via @soft-fork-wiki/voting, never on a server.
+   */
   submitSentiment: unavailable('Sentiment submission'),
   runLabScenario: simulationProvider.runLabScenario,
 };
