@@ -4,4 +4,7 @@ export * from "./cache.js";
 export * from "./config.js";
 export * from "./opinions.js";
 export * from "./redact.js";
+export * from "./relays.js";
 export * from "./server.js";
+export * from "./zaps.js";
+export * from "./zaptrust.js";
