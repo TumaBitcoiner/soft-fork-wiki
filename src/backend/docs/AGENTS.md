@@ -15,7 +15,7 @@ The BIP file content is stored in SQLite and returned by the API.
 
 ## Configuration
 - `BIPS_REPO_PATH` (required): absolute or relative path to the local BIP repo
-- `BIPS_DB_PATH` (optional): SQLite path (default `./bips.sqlite`)
+- `BIPS_DB_PATH` (optional): SQLite path (default `<repo-root>/bips.sqlite`)
 
 ## Install
 ```
