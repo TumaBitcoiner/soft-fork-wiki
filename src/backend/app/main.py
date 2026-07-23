@@ -1,42 +1,21 @@
 import logging
-import os
-from pathlib import Path
 from typing import List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Query
 
 from . import db, ingest
+from .config import load_config
 
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
 logger = logging.getLogger("soft_fork_bips")
 
 
-BASE_DIR = Path(__file__).resolve().parents[3]
-DEFAULT_DB_PATH = BASE_DIR / "bips.sqlite"
-
-
-def get_repo_path() -> Path:
-    repo_path = os.getenv("BIPS_REPO_PATH")
-    if not repo_path:
-        raise RuntimeError("BIPS_REPO_PATH is required")
-    resolved = Path(repo_path).expanduser().resolve()
-    if not resolved.exists():
-        raise RuntimeError(f"BIPS_REPO_PATH does not exist: {resolved}")
-    return resolved
-
-
-def get_db_path() -> Path:
-    db_path = os.getenv("BIPS_DB_PATH")
-    if db_path:
-        return Path(db_path).expanduser().resolve()
-    return DEFAULT_DB_PATH
-
-
 def init_app() -> FastAPI:
     app = FastAPI(title="Soft Fork BIPs API")
-    repo_path = get_repo_path()
-    db_path = get_db_path()
+    config = load_config()
+    repo_path = config.bips_repo_path
+    db_path = config.bips_db_path
     logger.info("Using BIP repo at %s", repo_path)
 
     connection = db.connect(db_path)
