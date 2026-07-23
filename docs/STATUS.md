@@ -102,21 +102,37 @@ would give the analytics honest denominators.
   `kind:1` notes carrying the `#bip<N>` tag. Measured coverage against keyword
   search on a NIP-50 relay:
 
-  | BIP | via hashtag | via keyword | **new** from keyword |
-  |-----|------------:|------------:|---------------------:|
-  | 300 | 113 | 66 | **66** — no overlap at all |
-  | 119 | 9 | 6 | 5 |
-  | 444 | 4 | 29 | **29** — 7× more |
+  **FIXED** — we now also run NIP-50 keyword search and query `kind:30023`
+  long-form, and we dropped a relay that was returning nothing. Measured
+  before/after:
 
-  Two almost disjoint populations: people who *tag* a post are broadcasting;
-  people *arguing* about a proposal rarely type the hashtag. On top of that,
-  **124 long-form articles (`kind:30023`)** exist for these topics and we never
-  query that kind — long-form is where substantive analysis lives. And
-  `relay.nostr.band`, one of our four default relays, currently returns 0 for
-  every query including plain tag lookups, so we are effectively on three.
+  | BIP | was (tag only) | now | tag | search | long-form |
+  |-----|---------------:|----:|----:|-------:|----------:|
+  | 300 | 113 | **460** | 113 | 336 | 11 |
+  | 444 | 4 | **313** | 4 | 293 | 16 |
+  | 119 | 9 | **294** | 9 | 265 | 20 |
 
-  This is why BIP 444 reads −100 off 4 notes when ~33 exist. Fixing coverage
-  matters more than adding non-Nostr sources.
+  People who *tag* a post are broadcasting; people *arguing* about a proposal
+  rarely type the hashtag — for BIP 300 the two sets barely overlapped.
+  BIP 444's −100 gauge came from **four** posts when 313 were reachable.
+
+  Two traps found on the way, both now guarded:
+
+  - **A relay that silently ignores `search`.** `relay.snort.social` returned
+    20 events for the nonsense term `zzqqxjfluffernutterxyzzy`. Trusting it
+    would have fed unrelated posts into the gauge with nothing to indicate a
+    problem. Search filters now go only to relays proven search-capable by a
+    gibberish-term probe.
+  - **Long-form counts were inflated by revisions.** `kind:30023` is
+    addressable — editing an article mints a new event id — so deduping by id
+    counted one article many times. An earlier draft of this doc claimed "124
+    long-form articles"; that was revisions, not articles. Real figures are
+    11–20 distinct articles per BIP, and dedupe is now address-based with the
+    newest revision winning.
+
+  Trade-off: more posts means a slower cold query (BIP 300 is now 460 LLM
+  calls). Parallelism is raised 5 → 16 and `maxNotes` caps a run when speed
+  matters more than completeness.
 
 - **The `#bip<N>` hashtag also catches general Bitcoin posts**, not only
   discussion of the proposal. A real BIP 110 note read *"Bitcoin breaks the
