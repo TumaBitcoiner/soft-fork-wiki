@@ -9,7 +9,7 @@ from typing import Dict, Iterable, List, Optional
 HEADER_RE = re.compile(r"^\s*([A-Za-z0-9 -]+):\s*(.*)$")
 HEADER_START_RE = re.compile(r"^\s*<pre>\s*$", re.IGNORECASE)
 HEADER_END_RE = re.compile(r"^\s*</pre>\s*$", re.IGNORECASE)
-SUPPORTED_STATUSES = {"Draft", "Complete"}
+SUPPORTED_STATUSES = {"Draft", "Complete", "Deployed"}
 TARGET_LAYER = "Consensus (soft fork)"
 
 

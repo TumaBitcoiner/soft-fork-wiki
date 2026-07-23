@@ -5,7 +5,7 @@ This backend reads a local clone of the Bitcoin BIPs repo and serves BIPs that
 match:
 
 - `Layer: Consensus (soft fork)`
-- `Status: Draft` or `Status: Complete`
+- `Status: Draft`, `Status: Complete`, or `Status: Deployed`
 
 The BIP file content is stored in SQLite and returned by the API.
 
@@ -32,11 +32,11 @@ On startup, the server scans the repo and upserts matching BIPs into SQLite.
 ## Endpoints
 - `GET /bips`
   - Returns full records including `content`
-  - Query params: `status=Draft|Complete`, `limit`, `offset`
+  - Query params: `status=Draft|Complete|Deployed`, `limit`, `offset`
 
 - `GET /bips/meta`
   - Returns metadata only
-  - Query params: `status=Draft|Complete`, `limit`, `offset`
+  - Query params: `status=Draft|Complete|Deployed`, `limit`, `offset`
 
 - `GET /bips/{bip_number}`
   - Returns a single BIP with full `content`
@@ -48,7 +48,7 @@ On startup, the server scans the repo and upserts matching BIPs into SQLite.
 - Reads `bip-*.md` and `bip-*.mediawiki`
 - Skips files missing `Layer` or `Status`
 - Filters to `Layer: Consensus (soft fork)`
-- Filters to `Status: Draft` or `Status: Complete`
+- Filters to `Status: Draft`, `Status: Complete`, or `Status: Deployed`
 
 ## Notes
 - The DB is populated on startup only.
