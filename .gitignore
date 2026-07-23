@@ -1,3 +1,6 @@
 bips-master/
 bips.sqlite
+bips_explain.sqlite
+config.json
 src/backend/app/__pycache__
+src/llm-backend/app/__pycache__
