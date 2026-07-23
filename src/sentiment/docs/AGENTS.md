@@ -8,9 +8,13 @@ a BIP on Nostr and (b) read what the Nostr network already thinks about it.
 - `@soft-fork-wiki/sentiment` — fetch BIP discussion, LLM-classify, aggregate
 - `@soft-fork-wiki/shared` — the types both sides speak (dependency-free)
 
-**These are libraries, not a service.** There is no HTTP API to call — the
-frontend imports them directly. Contrast with the BIPs API in `src/backend`,
-which *is* an HTTP service.
+**Reads and writes split differently.** `voting` is a browser-safe library the
+frontend imports directly — it builds unsigned event templates you sign and
+publish. `sentiment` cannot run in a browser (LLM classification needs an API
+key), so it is consumed over HTTP like `src/backend` and `src/llm-backend`.
+
+This code lives in `src/sentiment/` and is a self-contained pnpm workspace —
+nothing of ours is at the repo root.
 
 ## Requirements
 - Node 20+ and pnpm (`npm i -g pnpm`)
