@@ -3,9 +3,13 @@ dist/
 build/
 .turbo/
 *.log
+# Secrets. The broad globs are deliberate: a text editor saving ".env" as
+# ".env.txt" is a common way to leak a key past a narrow rule.
 .env
-.env.local
-.env.*.local
+.env.*
+*.env
+*.env.*
+!.env.example
 .DS_Store
 coverage/
 *.tsbuildinfo
