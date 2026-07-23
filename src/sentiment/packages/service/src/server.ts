@@ -19,6 +19,16 @@
  *    for the LLM — so a `?mode=llm` request can never serve a zap-shaped body
  *    or vice versa, whatever the TTLs are set to.
  *
+ * ## THREE CACHES, THREE CLOCKS
+ *
+ * `?refresh=1` must mean "re-measure", not "re-measure some of it", so it
+ * invalidates the response cache AND the public-discussion read behind it (see
+ * `discussion.ts`). It deliberately does NOT clear the LNURL endpoint memo
+ * (`lnurlcache.ts`): that holds "which pubkey is allowed to sign this
+ * recipient's receipts", which is not a measurement of this BIP, and dropping it
+ * would turn every refresh back into the multi-second cold path this service
+ * exists to avoid.
+ *
  * CORS is fully permissive because the only thing here is public, read-only
  * data about public Nostr discussion, and the Vite dev server sits on a
  * different port (5173) than this service (8002). There is nothing to protect
@@ -35,8 +45,11 @@ import type { SentimentData, SentimentMode } from "./adapter.js";
 import { loadSentimentData } from "./analyze.js";
 import { SingleFlightCache } from "./cache.js";
 import { parseMode, type ServiceConfig } from "./config.js";
+import { discussionCacheStats, invalidateDiscussion } from "./discussion.js";
+import { installLnurlCache, lnurlCacheStats } from "./lnurlcache.js";
 import { safeMessage } from "./redact.js";
 import { loadZapSentimentData } from "./zaps.js";
+import { zapProviderCacheStats } from "./zaptrust.js";
 
 /** `/sentiment/110` — the BIP number is the only path parameter we take. */
 const SENTIMENT_ROUTE = /^\/sentiment\/([^/]+)$/;
@@ -120,6 +133,11 @@ export function createSentimentServer(
   config: ServiceConfig,
   deps: ServerDeps = {},
 ): Server {
+  // Process-wide and idempotent. Installed here rather than in `main.ts` so
+  // that anything constructing a server — including a test — gets the same
+  // memoised LNURL lookups the demo relies on.
+  installLnurlCache();
+
   const loaders: Record<
     SentimentMode,
     (bipNumber: number, config: ServiceConfig) => Promise<SentimentData>
@@ -169,8 +187,20 @@ export function createSentimentServer(
         zapTtlMs: config.zapTtlMs,
         zapBudgetMs: config.zapBudgetMs,
         zapTrust: config.zapTrust,
+        discussion: {
+          postLimit: config.discussionPostLimit,
+          budgetMs: config.discussionBudgetMs,
+          ttlMs: config.discussionTtlMs,
+        },
         relays: config.relays ?? "default",
-        cache: { zaps: caches.zaps.stats(), llm: caches.llm.stats() },
+        cache: {
+          zaps: caches.zaps.stats(),
+          llm: caches.llm.stats(),
+          discussion: discussionCacheStats(),
+          // The two that make a warm request fast. Watch `hits` climb.
+          lnurl: lnurlCacheStats(),
+          zapProviders: zapProviderCacheStats(),
+        },
       });
       return;
     }
@@ -213,7 +243,12 @@ export function createSentimentServer(
     }
 
     const cache = caches[mode];
-    if (wantsRefresh(url)) cache.invalidate(bipNumber);
+    if (wantsRefresh(url)) {
+      cache.invalidate(bipNumber);
+      // Otherwise `?refresh=1` would re-run the app-vote read and hand back a
+      // five-minute-old discussion read, which is not what "refresh" means.
+      if (mode === "zaps") invalidateDiscussion(bipNumber);
+    }
 
     try {
       const data = await cache.get(bipNumber, () => loaders[mode](bipNumber, config));
