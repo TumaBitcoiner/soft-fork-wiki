@@ -1,65 +1,120 @@
-# Frontend development instructions
+# Local project development instructions
 
-The frontend lives in `src/frontend`. Do not move it to the repository root.
+Run all commands from the repository root unless a section says otherwise.
+Keep the frontend in `src/frontend` and the unified FastAPI backend in
+`src/backend`.
 
 ## First-time setup
 
-Run these commands from the repository root:
+Install the backend and frontend dependencies:
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r src/backend/requirements-dev.txt
 npm --prefix src/frontend install
+```
+
+Create the local environment files:
+
+```bash
+cp .env.example .env
 cp src/frontend/.env.example src/frontend/.env
 ```
 
-The default frontend configuration uses the local API:
+The default frontend configuration must use the local backend:
 
 ```text
 VITE_DATA_MODE=http
 VITE_API_BASE_URL=http://localhost:8000
 ```
 
-Start the FastAPI backend before testing real BIP data. See
-`LOCAL_DEVELOPMENT.md` for backend setup.
+Do not commit `.env`, SQLite databases, the cloned BIP repository,
+`node_modules`, or `.venv`.
 
-## Run the frontend
+## Launch the complete project
 
-From the repository root:
-
-```bash
-npm --prefix src/frontend run dev
-```
-
-Open:
-
-```text
-http://localhost:5173
-```
-
-Alternatively, after completing the full local setup, start both the frontend
-and backend with:
+Start the unified backend and frontend together:
 
 ```bash
 npm run dev
 ```
 
-## Explicit mock mode
+The root launcher starts:
 
-Mock data is available only when explicitly configured. Set the following in
+```text
+Frontend:   http://localhost:5173
+Backend:    http://localhost:8000
+API health: http://localhost:8000/health
+```
+
+Leave the launcher running while testing. Stop both processes with `Ctrl+C`.
+
+On the first backend launch, the application clones `bitcoin/bips` into
+`data/bitcoin-bips` and indexes the selected BIPs into `data/app.sqlite`.
+Do not run `git pull` or ingestion work on individual API requests.
+
+Verify both services after launch:
+
+```bash
+curl http://localhost:8000/health
+curl -I http://localhost:5173
+```
+
+## Launch services separately
+
+Backend:
+
+```bash
+source .venv/bin/activate
+uvicorn app.main:app --app-dir src/backend --reload --port 8000
+```
+
+Frontend, in a second terminal:
+
+```bash
+npm --prefix src/frontend run dev
+```
+
+The old `src/llm-backend` and `src/sentiment` directories are preserved, but
+they are not separate processes in the Phase 1 local launch. Their functionality
+will be integrated into the unified backend incrementally.
+
+## Explicit frontend mock mode
+
+Mock data is available only when explicitly configured. Set this in
 `src/frontend/.env`, then restart Vite:
 
 ```text
 VITE_DATA_MODE=mock
 ```
 
-Do not add mock fallbacks to HTTP mode.
+Do not add mock fallbacks to HTTP mode. Test Lab remains a separate,
+clearly-labelled browser simulation.
 
-## Validate frontend changes
+## Validate changes
 
-Run:
+Run the complete validation suite:
+
+```bash
+npm test
+```
+
+For frontend-only validation:
 
 ```bash
 npm --prefix src/frontend test
 ```
 
-This performs TypeScript checking, ESLint validation, unit tests, and a
-production build. Frontend work is not complete until this command passes.
+For backend-only validation:
+
+```bash
+.venv/bin/pytest src/backend/tests
+```
+
+The full validation performs backend tests, TypeScript checking, ESLint,
+frontend unit tests, and a production build. Work is not complete until the
+relevant validation passes.
+
+See `LOCAL_DEVELOPMENT.md` for environment variables, API endpoints, manual
+verification, and troubleshooting details.
