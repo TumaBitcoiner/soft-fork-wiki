@@ -39,6 +39,7 @@ import {
   TimelineEvent,
   VoteModal,
 } from '@/components/product';
+import { Markdown } from '@/components/Markdown';
 import { sentimentLabel, voteButtonChoiceStyle } from '@/components/productConstants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -310,6 +311,8 @@ export function AskPage() {
               <div className="mt-4 h-20 animate-pulse rounded bg-gray-100" />
               <p className="mt-4 text-sm text-[#6B7280]">Making sense of it…</p>
             </div>
+          ) : mutation.isError && mutation.error instanceof Error && mutation.error.message === 'Select a BIP to ask about.' ? (
+            <EmptyState title="Pick a BIP first" body="Choose a proposal so we know which sources to summarize." />
           ) : mutation.isError ? (
             <ErrorState onRetry={() => submit()} />
           ) : mutation.data ? (
@@ -349,6 +352,7 @@ export function BipDetailPage() {
   }
 
   const bip = query.data;
+  const isMarkdownSource = bip.sourceUrl?.toLowerCase().endsWith('.md') ?? false;
 
   return (
     <AppShell>
@@ -436,13 +440,25 @@ export function BipDetailPage() {
               {bip.citations.map((citation) => (
                 <div key={citation.id} className="rounded-xl border bg-white p-6">
                   <SourceChip citation={citation} />
-                  <blockquote className="mt-4 border-l-2 border-[#00A7CC] pl-4 leading-7 text-[#4B5563]">{citation.excerpt}</blockquote>
+                  {isMarkdownSource ? (
+                    <div className="mt-4 border-l-2 border-[#00A7CC] pl-4 text-[#4B5563]">
+                      <Markdown content={citation.excerpt} className="text-[15px] leading-7" />
+                    </div>
+                  ) : (
+                    <blockquote className="mt-4 border-l-2 border-[#00A7CC] pl-4 leading-7 text-[#4B5563]">{citation.excerpt}</blockquote>
+                  )}
                 </div>
               ))}
               {bip.content && (
-                <pre className="max-h-[70vh] overflow-auto whitespace-pre-wrap rounded-xl border bg-white p-6 font-mono text-sm leading-6 text-[#374151]">
-                  {bip.content}
-                </pre>
+                isMarkdownSource ? (
+                  <div className="max-h-[70vh] overflow-auto rounded-xl border bg-white p-6 text-[#374151]">
+                    <Markdown content={bip.content} className="text-sm leading-6" />
+                  </div>
+                ) : (
+                  <pre className="max-h-[70vh] overflow-auto whitespace-pre-wrap rounded-xl border bg-white p-6 font-mono text-sm leading-6 text-[#374151]">
+                    {bip.content}
+                  </pre>
+                )
               )}
             </div>
           </TabsContent>

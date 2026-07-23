@@ -11,19 +11,8 @@ from typing import Iterable, Optional
 HEADER_RE = re.compile(r"^\s*([A-Za-z0-9 -]+):\s*(.*)$")
 HEADER_START_RE = re.compile(r"^\s*<pre>\s*$", re.IGNORECASE)
 HEADER_END_RE = re.compile(r"^\s*</pre>\s*$", re.IGNORECASE)
+HEADER_FENCE_RE = re.compile(r"^\s*```")
 TARGET_LAYER = "Consensus (soft fork)"
-STATUS_MAP = {
-    "draft": "Draft",
-    "proposed": "Proposed",
-    "complete": "Final",
-    "final": "Final",
-    "active": "Active",
-    "deployed": "Deployed",
-    "rejected": "Rejected",
-    "withdrawn": "Withdrawn",
-    "replaced": "Replaced",
-    "obsolete": "Replaced",
-}
 
 
 @dataclass(frozen=True)
@@ -44,8 +33,8 @@ class BipRecord:
     ingested_at: str
 
 
-def normalize_status(status: str) -> str:
-    return STATUS_MAP.get(status.strip().lower(), "Unknown")
+def normalize_status_filter(status: str) -> str:
+    return status.strip().lower()
 
 
 def scan_bip_files(repo_path: Path) -> list[Path]:
@@ -58,6 +47,7 @@ def scan_bip_files(repo_path: Path) -> list[Path]:
 def parse_header(content: str) -> dict[str, str]:
     headers: dict[str, str] = {}
     in_pre_block = False
+    in_fenced_block = False
     last_key: Optional[str] = None
 
     for line in content.splitlines():
@@ -66,15 +56,20 @@ def parse_header(content: str) -> dict[str, str]:
             continue
         if HEADER_END_RE.match(line):
             break
+        if HEADER_FENCE_RE.match(line):
+            if in_fenced_block:
+                break
+            in_fenced_block = True
+            continue
         if not in_pre_block and not line.strip():
             if headers:
                 break
             continue
         match = HEADER_RE.match(line)
         if not match:
-            if in_pre_block and last_key and line[:1].isspace() and line.strip():
+            if (in_pre_block or in_fenced_block) and last_key and line[:1].isspace() and line.strip():
                 headers[last_key] = f"{headers[last_key]} {line.strip()}"
-            if headers and not in_pre_block:
+            if headers and not (in_pre_block or in_fenced_block):
                 break
             continue
         last_key = match.group(1).strip().lower()
@@ -111,10 +106,13 @@ def build_record(
         if repo_path
         else file_path.name
     )
+    status_raw = headers.get("status", "").strip()
+    if not status_raw:
+        status_raw = "Unknown"
     return BipRecord(
         bip_number=int(bip_raw),
         title=headers.get("title", "").strip() or f"BIP {int(bip_raw)}",
-        status=normalize_status(headers.get("status", "")),
+        status=status_raw,
         layer=TARGET_LAYER,
         type=headers.get("type"),
         authors=_parse_authors(headers.get("author") or headers.get("authors")),

@@ -24,4 +24,9 @@ describe('httpProvider', () => {
       ApiUnavailableError,
     );
   });
+
+  it('requires a BIP number for askBips', async () => {
+    await expect(httpProvider.askBips({ question: 'Explain Taproot.', mode: 'Balanced' }))
+      .rejects.toThrow('Select a BIP to ask about.');
+  });
 });

@@ -1,9 +1,10 @@
 # Local development
 
-Phase 1 runs the React frontend and one FastAPI backend locally:
+Phase 1 runs the React frontend and two FastAPI backends locally:
 
 - Frontend: <http://localhost:5173>
 - Backend: <http://localhost:8000>
+- LLM backend: <http://localhost:8001>
 - API health: <http://localhost:8000/health>
 
 SQLite is used by default. On the first backend start, the backend clones
@@ -32,7 +33,7 @@ The example values work for the default local setup. Do not commit either
 npm run dev
 ```
 
-The launcher stops both child processes when you press `Ctrl+C`.
+The launcher stops all child processes when you press `Ctrl+C`.
 
 ## Start services separately
 
@@ -47,6 +48,12 @@ Frontend:
 
 ```bash
 npm --prefix src/frontend run dev
+```
+
+LLM backend:
+
+```bash
+uvicorn app.main:app --app-dir src/llm-backend --reload --port 8001
 ```
 
 ## Environment variables
@@ -79,6 +86,7 @@ GET  /api/bips/meta
 GET  /api/bips/{bip_number}
 GET  /api/bips/{bip_number}/meta
 POST /api/admin/refresh-bips
+POST /api/explain
 ```
 
 Refresh the local BIP checkout and re-index changed records:
@@ -93,12 +101,18 @@ The backend never pulls on a read request.
 
 Not implemented yet:
 
-- `/api/explain` and Ask Anything (Phase 2/5)
+- Ask Anything (Phase 2/5)
 - `/api/sentiment/{bip_number}` (Phase 3)
 - Nostr publishing helpers (Phase 4)
 
 HTTP mode returns an explicit unavailable error for these features. Test Lab
 continues to use a separate, clearly labelled browser simulation.
+
+## LLM backend
+
+The LLM backend runs on port 8001 and is started by `npm run dev`.
+It requires a repo-root `config.json` with `bips_db_path` pointing at the Phase 1
+SQLite database and a valid `ppq_api_key`.
 
 ## Tests
 

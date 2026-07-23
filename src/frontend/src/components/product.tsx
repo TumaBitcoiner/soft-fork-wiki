@@ -33,6 +33,7 @@ import type {
   SentimentData,
   TimelineItem,
 } from '@/api/apiClient';
+import { Markdown } from '@/components/Markdown';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -179,9 +180,11 @@ export function SearchAskBar({
 const statusStyle: Record<BipStatus, string> = {
   Draft: 'border-amber-200 bg-amber-50 text-amber-800',
   Proposed: 'border-cyan-200 bg-cyan-50 text-cyan-800',
+  Complete: 'border-orange-200 bg-orange-50 text-orange-800',
   Final: 'border-blue-200 bg-blue-50 text-blue-700',
   Active: 'border-green-200 bg-green-50 text-green-700',
   Deployed: 'border-green-200 bg-green-50 text-green-700',
+  Closed: 'border-slate-200 bg-slate-100 text-slate-700',
   Rejected: 'border-red-200 bg-red-50 text-red-700',
   Withdrawn: 'border-gray-200 bg-gray-100 text-gray-600',
   Replaced: 'border-violet-200 bg-violet-50 text-violet-700',
@@ -377,20 +380,20 @@ export function AskAnswerCard({ answer }: { answer: AskAnswer }) {
             Source coverage: {answer.coverageTier}
           </span>
         </div>
-        <h2 className="mt-5 text-2xl font-semibold leading-snug">{answer.shortAnswer}</h2>
+        <Markdown content={answer.shortAnswer} className="mt-5 text-2xl font-semibold leading-snug" />
 
         <div className="mt-5 rounded-lg border border-[#BCE3C7] bg-[#F3FBF4] p-4">
           <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[#166534]">
             <Sparkles className="size-3.5" /> In plain terms
           </p>
-          <p className="editorial-copy mt-2 text-lg leading-8 text-[#1F3B2C]">{answer.inPlainTerms}</p>
+          <Markdown content={answer.inPlainTerms} className="editorial-copy mt-2 text-lg leading-8 text-[#1F3B2C]" />
         </div>
 
         <div className="mt-4 rounded-lg border border-[#D8D2C4] bg-[#FAF7EF] p-4">
           <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[#6B7280]">
             <ScrollText className="size-3.5" /> What the BIPs say
           </p>
-          <p className="mt-2 text-[15px] leading-7 text-[#374151]">{answer.whatBipsSay}</p>
+          <Markdown content={answer.whatBipsSay} className="mt-2 text-[15px] leading-7 text-[#374151]" />
         </div>
 
         {showCoverageWarning && (
