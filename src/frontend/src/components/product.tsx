@@ -36,6 +36,7 @@ import type {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { sentimentLabel } from '@/components/productConstants';
 
 const navItems = [
   ['Explore Proposals', '/explore'],
@@ -177,9 +178,14 @@ export function SearchAskBar({
 
 const statusStyle: Record<BipStatus, string> = {
   Draft: 'border-amber-200 bg-amber-50 text-amber-800',
-  Complete: 'border-blue-200 bg-blue-50 text-blue-700',
+  Proposed: 'border-cyan-200 bg-cyan-50 text-cyan-800',
+  Final: 'border-blue-200 bg-blue-50 text-blue-700',
+  Active: 'border-green-200 bg-green-50 text-green-700',
   Deployed: 'border-green-200 bg-green-50 text-green-700',
-  Closed: 'border-gray-200 bg-gray-100 text-gray-600',
+  Rejected: 'border-red-200 bg-red-50 text-red-700',
+  Withdrawn: 'border-gray-200 bg-gray-100 text-gray-600',
+  Replaced: 'border-violet-200 bg-violet-50 text-violet-700',
+  Unknown: 'border-gray-200 bg-gray-100 text-gray-600',
 };
 
 export function StatusChip({ status }: { status: BipStatus }) {
@@ -194,7 +200,7 @@ export function StatusChip({ status }: { status: BipStatus }) {
 const difficultyStyle: Record<DifficultyLevel, string> = {
   Beginner: 'border-[#BCE3C7] bg-[#EFFBF1] text-[#166534]',
   Intermediate: 'border-[#D8D2C4] bg-[#F3EFE5] text-[#57544B]',
-  Technical: 'border-[#8AB9C4] bg-[#EAF8FB] text-[#0E5A6B]',
+  Advanced: 'border-[#8AB9C4] bg-[#EAF8FB] text-[#0E5A6B]',
 };
 
 export function DifficultyChip({ level }: { level: DifficultyLevel }) {
@@ -225,10 +231,12 @@ export function BipCard({ bip }: { bip: Bip }) {
         <StatusChip status={bip.status} />
       </div>
       <h3 className="mt-5 text-xl font-semibold leading-snug tracking-tight">{bip.title}</h3>
-      <p className="mt-2 flex items-start gap-1.5 text-[13px] font-medium text-[#00838F]">
-        <Sparkles className="mt-0.5 size-3.5 shrink-0" />
-        In plain terms: {bip.plainSummary}
-      </p>
+      {bip.plainSummary && (
+        <p className="mt-2 flex items-start gap-1.5 text-[13px] font-medium text-[#00838F]">
+          <Sparkles className="mt-0.5 size-3.5 shrink-0" />
+          In plain terms: {bip.plainSummary}
+        </p>
+      )}
       <div className="mt-4 flex flex-wrap gap-2">
         <DifficultyChip level={bip.difficulty} />
         {bip.tags.slice(0, 2).map((tag) => (
@@ -275,14 +283,6 @@ export function TimelineEvent({ item, index }: { item: TimelineItem; index: numb
     </Link>
   );
 }
-
-const sentimentLabel: Record<SentimentChoice, string> = {
-  For: 'Good for Bitcoin',
-  Neutral: 'Not sure yet',
-  Against: 'Not good for Bitcoin',
-};
-
-export { sentimentLabel };
 
 export function SentimentMeter({ data }: { data: SentimentData }) {
   return (
@@ -579,14 +579,6 @@ export function NpubLoginButton({ npub, onLogin }: { npub: string; onLogin: (npu
     </Button>
   );
 }
-
-const voteButtonChoiceStyle: Record<SentimentChoice, string> = {
-  For: 'data-[selected=true]:border-[#16A34A] data-[selected=true]:bg-[#F0FBF2] data-[selected=true]:text-[#166534]',
-  Neutral: 'data-[selected=true]:border-[#6B7280] data-[selected=true]:bg-[#F3F4F6] data-[selected=true]:text-[#374151]',
-  Against: 'data-[selected=true]:border-[#DC2626] data-[selected=true]:bg-[#FDF2F2] data-[selected=true]:text-[#991B1B]',
-};
-
-export { voteButtonChoiceStyle };
 
 export function VoteModal({
   open,

@@ -1,17 +1,40 @@
 import type { ApiProvider, ListBipsParams } from './types';
-import { mockProvider } from './mockProvider';
+import { simulationProvider } from './simulationProvider';
 
-const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'https://api.justaskbips.com').replace(/\/$/, '');
+const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
+
+export class ApiUnavailableError extends Error {
+  constructor(feature: string) {
+    super(`${feature} is not available from the local HTTP backend yet.`);
+    this.name = 'ApiUnavailableError';
+  }
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${baseUrl}${path}`, { ...init, headers: { 'Content-Type': 'application/json', ...init?.headers } });
-  if (!response.ok) throw new Error(`API request failed (${response.status})`);
+  const response = await fetch(`${baseUrl}${path}`, {
+    ...init,
+    headers: { 'Content-Type': 'application/json', ...init?.headers },
+  });
+  if (!response.ok) {
+    let detail = '';
+    try {
+      const body = await response.json() as { detail?: string };
+      detail = body.detail ? `: ${body.detail}` : '';
+    } catch {
+      // The status code remains useful when a proxy returns a non-JSON body.
+    }
+    throw new Error(`API request failed (${response.status})${detail}`);
+  }
   return response.json() as Promise<T>;
 }
 
 function queryString(params: Record<string, string | number | undefined>) {
   const query = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => { if (value !== undefined && value !== '' && value !== 'All') query.set(key, String(value)); });
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '' && value !== 'All') {
+      query.set(key, String(value));
+    }
+  });
   const encoded = query.toString();
   return encoded ? `?${encoded}` : '';
 }
@@ -24,11 +47,22 @@ function explorerParams(params: ListBipsParams) {
   };
 }
 
-function applyClientFilters<T extends { number: number; title: string; layer: string; topic: string; difficulty: string; era: string; summary: string; tags: string[] }>(records: T[], params: ListBipsParams) {
+function applyClientFilters<
+  T extends {
+    number: number;
+    title: string;
+    layer: string;
+    topic: string;
+    difficulty: string;
+    era: string;
+    summary: string;
+    tags: string[];
+  },
+>(records: T[], params: ListBipsParams) {
   const search = params.search?.trim().toLowerCase();
   return records.filter((bip) => {
-    const matchesSearch = !search || `${bip.number} ${bip.title} ${bip.summary} ${bip.tags.join(' ')}`.toLowerCase().includes(search);
-    return matchesSearch
+    const searchable = `${bip.number} ${bip.title} ${bip.summary} ${bip.tags.join(' ')}`.toLowerCase();
+    return (!search || searchable.includes(search))
       && (!params.layer || params.layer === 'All' || bip.layer === params.layer)
       && (!params.topic || params.topic === 'All' || bip.topic === params.topic)
       && (!params.difficulty || params.difficulty === 'All' || bip.difficulty === params.difficulty)
@@ -36,22 +70,28 @@ function applyClientFilters<T extends { number: number; title: string; layer: st
   });
 }
 
-// Explorer endpoints are live. Features whose backend contracts are still pending
-// deliberately continue using the mock provider in HTTP mode.
+const unavailable = (feature: string) => async (): Promise<never> => {
+  throw new ApiUnavailableError(feature);
+};
+
 export const httpProvider: ApiProvider = {
   async listBips(params: ListBipsParams = {}) {
-    const records = await request<Awaited<ReturnType<ApiProvider['listBips']>>>(`/bips${queryString(explorerParams(params))}`);
+    const records = await request<Awaited<ReturnType<ApiProvider['listBips']>>>(
+      `/api/bips${queryString(explorerParams(params))}`,
+    );
     return applyClientFilters(records, params);
   },
   async listBipMetadata(params: ListBipsParams = {}) {
-    const records = await request<Awaited<ReturnType<ApiProvider['listBipMetadata']>>>(`/bips/meta${queryString(explorerParams(params))}`);
+    const records = await request<Awaited<ReturnType<ApiProvider['listBipMetadata']>>>(
+      `/api/bips/meta${queryString(explorerParams(params))}`,
+    );
     return applyClientFilters(records, params);
   },
-  getBip: (bipNumber) => request(`/bips/${bipNumber}`),
-  getBipMetadata: (bipNumber) => request(`/bips/${bipNumber}/meta`),
-  askBips: (payload) => mockProvider.askBips(payload),
-  getTimeline: (params) => mockProvider.getTimeline(params),
-  getSentiment: (bipNumber) => mockProvider.getSentiment(bipNumber),
-  submitSentiment: (payload) => mockProvider.submitSentiment(payload),
-  runLabScenario: (payload) => mockProvider.runLabScenario(payload),
+  getBip: (bipNumber) => request(`/api/bips/${bipNumber}`),
+  getBipMetadata: (bipNumber) => request(`/api/bips/${bipNumber}/meta`),
+  askBips: unavailable('Ask Anything'),
+  getTimeline: unavailable('Timeline'),
+  getSentiment: unavailable('Sentiment'),
+  submitSentiment: unavailable('Sentiment submission'),
+  runLabScenario: simulationProvider.runLabScenario,
 };

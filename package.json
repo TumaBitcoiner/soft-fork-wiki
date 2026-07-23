@@ -1,0 +1,8 @@
+{
+  "name": "soft-fork-wiki-local",
+  "private": true,
+  "scripts": {
+    "dev": "./scripts/dev.sh",
+    "test": "./scripts/test.sh"
+  }
+}

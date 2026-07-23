@@ -3,7 +3,7 @@ import { useSeoMeta } from '@unhead/react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, FlaskConical, MessageCircleQuestion, Search, ShieldCheck, Users } from 'lucide-react';
 import { apiClient } from '@/api/apiClient';
-import { AppShell, BipCard, SearchAskBar, TimelineEvent } from '@/components/product';
+import { AppShell, BipCard, ErrorState, SearchAskBar, TimelineEvent } from '@/components/product';
 import { Button } from '@/components/ui/button';
 
 const journeySteps = [
@@ -108,9 +108,15 @@ const Index = () => {
               <Link to="/explore">Browse all <ArrowRight /></Link>
             </Button>
           </div>
-          <div className="mt-8 grid gap-5 md:grid-cols-3">
-            {featured?.map((bip) => <BipCard key={bip.number} bip={bip} />)}
-          </div>
+          {bips.isError ? (
+            <div className="mt-8">
+              <ErrorState onRetry={() => bips.refetch()} />
+            </div>
+          ) : (
+            <div className="mt-8 grid gap-5 md:grid-cols-3">
+              {featured?.map((bip) => <BipCard key={bip.number} bip={bip} />)}
+            </div>
+          )}
         </section>
 
         <section className="border-y border-[#D8D2C4] bg-white">
@@ -125,9 +131,15 @@ const Index = () => {
                 <Link to="/timeline">Full timeline <ArrowRight /></Link>
               </Button>
             </div>
-            <div className="mt-8 grid gap-5 md:grid-cols-3">
-              {timeline.data?.slice(2, 5).map((item, index) => <TimelineEvent key={item.bipNumber} item={item} index={index + 2} />)}
-            </div>
+            {timeline.isError ? (
+              <p className="mt-8 rounded-lg border border-dashed border-[#D8D2C4] p-6 text-center text-sm text-[#6B7280]">
+                Timeline data is not available from the Phase 1 local backend yet.
+              </p>
+            ) : (
+              <div className="mt-8 grid gap-5 md:grid-cols-3">
+                {timeline.data?.slice(2, 5).map((item, index) => <TimelineEvent key={item.bipNumber} item={item} index={index + 2} />)}
+              </div>
+            )}
           </div>
         </section>
 

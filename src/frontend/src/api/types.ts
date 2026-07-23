@@ -1,7 +1,16 @@
-export type BipStatus = 'Draft' | 'Complete' | 'Deployed' | 'Closed';
+export type BipStatus =
+  | 'Draft'
+  | 'Proposed'
+  | 'Final'
+  | 'Active'
+  | 'Deployed'
+  | 'Rejected'
+  | 'Withdrawn'
+  | 'Replaced'
+  | 'Unknown';
 export type AskMode = 'Simple' | 'Balanced' | 'Technical';
 export type SentimentChoice = 'Against' | 'Neutral' | 'For';
-export type DifficultyLevel = 'Beginner' | 'Intermediate' | 'Technical';
+export type DifficultyLevel = 'Beginner' | 'Intermediate' | 'Advanced';
 export type CoverageTier = 'Strong' | 'Partial' | 'Weak';
 export type LabStatus = 'passed' | 'failed' | 'simulated' | 'error';
 
@@ -40,9 +49,15 @@ export interface Bip {
   tags: string[];
   relatedBips: number[];
   authors: string[];
-  created: string;
+  created?: string;
+  type?: string;
+  discussion?: string;
+  license?: string;
+  content: string;
+  sourceUrl?: string;
   activated?: string;
   citations: Citation[];
+  generationStatus: 'missing' | 'ai-generated' | 'reviewed';
 }
 
 export interface ListBipsParams {

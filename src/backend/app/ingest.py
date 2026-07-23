@@ -1,124 +1,158 @@
+import hashlib
+import json
 import re
 import sqlite3
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional
+from typing import Iterable, Optional
 
 
 HEADER_RE = re.compile(r"^\s*([A-Za-z0-9 -]+):\s*(.*)$")
 HEADER_START_RE = re.compile(r"^\s*<pre>\s*$", re.IGNORECASE)
 HEADER_END_RE = re.compile(r"^\s*</pre>\s*$", re.IGNORECASE)
-SUPPORTED_STATUSES = {"Draft", "Complete", "Deployed"}
 TARGET_LAYER = "Consensus (soft fork)"
+STATUS_MAP = {
+    "draft": "Draft",
+    "proposed": "Proposed",
+    "complete": "Final",
+    "final": "Final",
+    "active": "Active",
+    "deployed": "Deployed",
+    "rejected": "Rejected",
+    "withdrawn": "Withdrawn",
+    "replaced": "Replaced",
+    "obsolete": "Replaced",
+}
 
 
-@dataclass
+@dataclass(frozen=True)
 class BipRecord:
     bip_number: int
     title: str
     status: str
     layer: str
     type: Optional[str]
-    authors: Optional[str]
+    authors: list[str]
     created: Optional[str]
+    discussion: Optional[str]
+    license: Optional[str]
     file_path: str
+    source_url: str
     content: str
+    content_hash: str
     ingested_at: str
 
 
-def scan_bip_files(repo_path: Path) -> List[Path]:
-    patterns = ["bip-*.md", "bip-*.mediawiki"]
-    matches: List[Path] = []
-    for pattern in patterns:
+def normalize_status(status: str) -> str:
+    return STATUS_MAP.get(status.strip().lower(), "Unknown")
+
+
+def scan_bip_files(repo_path: Path) -> list[Path]:
+    matches: list[Path] = []
+    for pattern in ("bip-*.md", "bip-*.mediawiki"):
         matches.extend(repo_path.rglob(pattern))
-    return matches
+    return sorted(matches)
 
 
-def parse_header(content: str) -> Dict[str, str]:
-    headers: Dict[str, str] = {}
-    lines = content.splitlines()
+def parse_header(content: str) -> dict[str, str]:
+    headers: dict[str, str] = {}
     in_pre_block = False
+    last_key: Optional[str] = None
 
-    for line in lines:
+    for line in content.splitlines():
         if HEADER_START_RE.match(line):
             in_pre_block = True
             continue
         if HEADER_END_RE.match(line):
             break
         if not in_pre_block and not line.strip():
-            break
-        if not in_pre_block and not headers and not HEADER_RE.match(line):
+            if headers:
+                break
             continue
-        if not in_pre_block and headers and not HEADER_RE.match(line):
-            break
         match = HEADER_RE.match(line)
         if not match:
+            if in_pre_block and last_key and line[:1].isspace() and line.strip():
+                headers[last_key] = f"{headers[last_key]} {line.strip()}"
+            if headers and not in_pre_block:
+                break
             continue
-        key = match.group(1).strip().lower()
-        value = match.group(2).strip()
-        headers[key] = value
+        last_key = match.group(1).strip().lower()
+        headers[last_key] = match.group(2).strip()
 
     return headers
 
 
-def build_record(file_path: Path, content: str) -> Optional[BipRecord]:
+def _parse_authors(raw: Optional[str]) -> list[str]:
+    if not raw:
+        return []
+    return [
+        author.strip()
+        for author in re.split(r"\s*,\s*(?![^<]*>)|\s+and\s+", raw)
+        if author.strip()
+    ]
+
+
+def build_record(
+    file_path: Path,
+    content: str,
+    repo_path: Optional[Path] = None,
+) -> Optional[BipRecord]:
     headers = parse_header(content)
-    layer = headers.get("layer")
-    status = headers.get("status")
-    if not layer or not status:
+    layer = headers.get("layer", "").strip()
+    if layer.casefold() != TARGET_LAYER.casefold():
         return None
-    if layer.strip() != TARGET_LAYER:
+    bip_raw = headers.get("bip", "")
+    if not bip_raw.isdigit():
         return None
-    status_value = status.strip()
-    if status_value not in SUPPORTED_STATUSES:
-        return None
-    bip_raw = headers.get("bip")
-    if not bip_raw or not bip_raw.isdigit():
-        return None
-    ingested_at = datetime.now(timezone.utc).isoformat()
+
+    relative_path = (
+        file_path.resolve().relative_to(repo_path.resolve()).as_posix()
+        if repo_path
+        else file_path.name
+    )
     return BipRecord(
         bip_number=int(bip_raw),
-        title=headers.get("title", ""),
-        status=status_value,
-        layer=layer.strip(),
+        title=headers.get("title", "").strip() or f"BIP {int(bip_raw)}",
+        status=normalize_status(headers.get("status", "")),
+        layer=TARGET_LAYER,
         type=headers.get("type"),
-        authors=headers.get("author") or headers.get("authors"),
-        created=headers.get("created"),
-        file_path=str(file_path),
+        authors=_parse_authors(headers.get("author") or headers.get("authors")),
+        created=headers.get("created") or headers.get("assigned"),
+        discussion=headers.get("comments-uri") or headers.get("discussion"),
+        license=headers.get("license"),
+        file_path=relative_path,
+        source_url=f"https://github.com/bitcoin/bips/blob/master/{relative_path}",
         content=content,
-        ingested_at=ingested_at,
+        content_hash=hashlib.sha256(content.encode("utf-8")).hexdigest(),
+        ingested_at=datetime.now(timezone.utc).isoformat(),
     )
 
 
-def load_records(repo_path: Path) -> List[BipRecord]:
-    records: List[BipRecord] = []
+def load_records(repo_path: Path) -> list[BipRecord]:
+    records: list[BipRecord] = []
     for file_path in scan_bip_files(repo_path):
         content = file_path.read_text(encoding="utf-8", errors="replace")
-        record = build_record(file_path, content)
+        record = build_record(file_path, content, repo_path)
         if record:
             records.append(record)
     return records
 
 
-def upsert_records(connection: sqlite3.Connection, records: Iterable[BipRecord]) -> int:
-    cursor = connection.cursor()
-    count = 0
+def upsert_records(
+    connection: sqlite3.Connection,
+    records: Iterable[BipRecord],
+) -> int:
+    changed = 0
     for record in records:
-        cursor.execute(
+        before = connection.total_changes
+        connection.execute(
             """
             INSERT INTO bips (
-                bip_number,
-                title,
-                status,
-                layer,
-                type,
-                authors,
-                created,
-                file_path,
-                content,
-                ingested_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                bip_number, title, status, layer, type, authors, created,
+                discussion, license, file_path, source_url, content,
+                content_hash, ingested_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(bip_number) DO UPDATE SET
                 title=excluded.title,
                 status=excluded.status,
@@ -126,9 +160,14 @@ def upsert_records(connection: sqlite3.Connection, records: Iterable[BipRecord])
                 type=excluded.type,
                 authors=excluded.authors,
                 created=excluded.created,
+                discussion=excluded.discussion,
+                license=excluded.license,
                 file_path=excluded.file_path,
+                source_url=excluded.source_url,
                 content=excluded.content,
+                content_hash=excluded.content_hash,
                 ingested_at=excluded.ingested_at
+            WHERE bips.content_hash != excluded.content_hash
             """,
             (
                 record.bip_number,
@@ -136,18 +175,21 @@ def upsert_records(connection: sqlite3.Connection, records: Iterable[BipRecord])
                 record.status,
                 record.layer,
                 record.type,
-                record.authors,
+                json.dumps(record.authors),
                 record.created,
+                record.discussion,
+                record.license,
                 record.file_path,
+                record.source_url,
                 record.content,
+                record.content_hash,
                 record.ingested_at,
             ),
         )
-        count += 1
+        changed += connection.total_changes - before
     connection.commit()
-    return count
+    return changed
 
 
 def ingest_repo(connection: sqlite3.Connection, repo_path: Path) -> int:
-    records = load_records(repo_path)
-    return upsert_records(connection, records)
+    return upsert_records(connection, load_records(repo_path))
