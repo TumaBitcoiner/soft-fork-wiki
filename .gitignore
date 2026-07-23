@@ -2,5 +2,15 @@ bips-master/
 bips.sqlite
 bips_explain.sqlite
 config.json
+data/
+.venv/
+.env
+.env.*
+!.env.example
+src/frontend/.env
+src/frontend/.env.*
+!src/frontend/.env.example
 src/backend/app/__pycache__
 src/llm-backend/app/__pycache__
+**/__pycache__/
+.pytest_cache/

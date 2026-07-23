@@ -33,15 +33,13 @@ import {
   LabConsole,
   NpubLoginButton,
   PageHeader,
-  SearchAskBar,
   SentimentMeter,
-  sentimentLabel,
   SourceChip,
   StatusChip,
   TimelineEvent,
-  voteButtonChoiceStyle,
   VoteModal,
 } from '@/components/product';
+import { sentimentLabel, voteButtonChoiceStyle } from '@/components/productConstants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -362,10 +360,17 @@ export function BipDetailPage() {
           <span className="text-sm text-[#6B7280]">{bip.layer} · {bip.topic}</span>
         </div>
         <h1 className="mt-5 max-w-4xl text-4xl font-semibold tracking-[-0.04em] sm:text-6xl">{bip.title}</h1>
-        <p className="mt-6 flex items-start gap-2 max-w-3xl text-xl leading-8 text-[#4B5563]">
-          <Sparkles className="mt-1.5 size-5 shrink-0 text-[#00A7CC]" />
-          {bip.plainSummary}
-        </p>
+        {bip.plainSummary ? (
+          <p className="mt-6 flex items-start gap-2 max-w-3xl text-xl leading-8 text-[#4B5563]">
+            <Sparkles className="mt-1.5 size-5 shrink-0 text-[#00A7CC]" />
+            {bip.plainSummary}
+          </p>
+        ) : (
+          <p className="mt-6 max-w-3xl text-base leading-7 text-[#6B7280]">
+            Plain-language enrichment has not been generated yet. The complete
+            primary source is available below.
+          </p>
+        )}
         <div className="mt-7 flex flex-wrap gap-3">
           <Button asChild>
             <Link to={`/ask?bip=${bip.number}&q=${encodeURIComponent(`What should I understand about BIP ${bip.number}?`)}`}>
@@ -434,6 +439,11 @@ export function BipDetailPage() {
                   <blockquote className="mt-4 border-l-2 border-[#00A7CC] pl-4 leading-7 text-[#4B5563]">{citation.excerpt}</blockquote>
                 </div>
               ))}
+              {bip.content && (
+                <pre className="max-h-[70vh] overflow-auto whitespace-pre-wrap rounded-xl border bg-white p-6 font-mono text-sm leading-6 text-[#374151]">
+                  {bip.content}
+                </pre>
+              )}
             </div>
           </TabsContent>
 
@@ -452,7 +462,9 @@ export function BipDetailPage() {
           </TabsContent>
 
           <TabsContent value="sentiment" className="pt-8">
-            {sentiment.data && (
+            {sentiment.isError ? (
+              <ErrorState onRetry={() => sentiment.refetch()} />
+            ) : sentiment.data && (
               <div className="max-w-2xl rounded-xl border bg-white p-6">
                 <p className="text-sm text-[#6B7280]">Community signal only. Bitcoin consensus is not decided by votes.</p>
                 <div className="mt-5"><SentimentMeter data={sentiment.data} /></div>

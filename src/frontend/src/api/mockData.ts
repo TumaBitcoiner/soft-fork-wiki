@@ -164,7 +164,7 @@ const details: Record<number, BipSeed> = {
   },
   119: {
     title: 'CHECKTEMPLATEVERIFY',
-    topic: 'Covenants', layer: 'Consensus', status: 'Draft', difficulty: 'Technical', era: 'Active research',
+    topic: 'Covenants', layer: 'Consensus', status: 'Draft', difficulty: 'Advanced', era: 'Active research',
     plainSummary: 'A proposal that would let someone lock coins so they can only later be spent in one exact, pre-agreed way.',
     summary: 'Proposes a template hash commitment for constrained transaction spending paths.',
     inPlainTerms: 'Imagine writing a rule that says "this money can only ever be spent by paying these exact people, this exact amount, later." CTV lets a transaction commit to a template of what a future spend must look like, which opens the door to things like congestion-control batching, vaults, and non-custodial pre-signed payment trees.',
@@ -216,7 +216,7 @@ const details: Record<number, BipSeed> = {
   },
   143: {
     title: 'Transaction Signature Verification for Version 0 Witness Program',
-    topic: 'Signatures', layer: 'Consensus', status: 'Deployed', difficulty: 'Technical', era: '2015–2017',
+    topic: 'Signatures', layer: 'Consensus', status: 'Deployed', difficulty: 'Advanced', era: '2015–2017',
     plainSummary: 'Defines a faster, safer way to compute what a SegWit signature actually signs.',
     summary: 'Defines a more efficient signature digest algorithm for SegWit version 0.',
     inPlainTerms: 'This is the technical rulebook for exactly what bytes get hashed and signed in a SegWit transaction. It fixed some quadratic-hashing performance issues from legacy transactions and made signing amounts explicit, which closes another malleability angle.',
@@ -260,7 +260,7 @@ const details: Record<number, BipSeed> = {
   },
   340: {
     title: 'Schnorr Signatures for secp256k1',
-    topic: 'Signatures', layer: 'Cryptography', status: 'Complete', difficulty: 'Technical', era: '2018–2021',
+    topic: 'Signatures', layer: 'Cryptography', status: 'Final', difficulty: 'Advanced', era: '2018–2021',
     plainSummary: 'Introduces a newer, more flexible signature scheme that also makes multi-signature setups look like a single signature.',
     summary: 'Specifies 64-byte Schnorr signatures with deterministic verification behavior.',
     inPlainTerms: 'Schnorr signatures are smaller, easier to verify in batches, and — importantly — can be combined so that several signers look identical to a single signer on-chain. That combining trick is what makes many privacy and efficiency gains in Taproot possible.',
@@ -309,7 +309,7 @@ const details: Record<number, BipSeed> = {
   },
   342: {
     title: 'Validation of Taproot Scripts',
-    topic: 'Script', layer: 'Consensus', status: 'Deployed', difficulty: 'Technical', era: '2018–2021',
+    topic: 'Script', layer: 'Consensus', status: 'Deployed', difficulty: 'Advanced', era: '2018–2021',
     plainSummary: 'The rulebook for how scripts inside a Taproot spend are checked, including new upgrade-friendly rules.',
     summary: 'Defines Tapscript, updating script validation rules for Taproot script paths.',
     inPlainTerms: 'Tapscript is the “script language” used inside Taproot’s script-path spends. It removes some legacy quirks, adds clearer rules around signature operation limits, and — notably — treats unrecognized public key types as automatically valid, which makes future upgrades smoother.',
@@ -332,7 +332,7 @@ const details: Record<number, BipSeed> = {
   },
   347: {
     title: 'OP_CAT in Tapscript',
-    topic: 'Covenants', layer: 'Consensus', status: 'Draft', difficulty: 'Technical', era: 'Active research',
+    topic: 'Covenants', layer: 'Consensus', status: 'Draft', difficulty: 'Advanced', era: 'Active research',
     plainSummary: 'A proposal to bring back a simple opcode that joins two pieces of data together, within safe size limits.',
     summary: 'Proposes restoring a bounded concatenation opcode for Tapscript.',
     inPlainTerms: 'OP_CAT was disabled in early Bitcoin over resource-exhaustion concerns. Reintroducing it, but bounded by Tapscript’s stack-size limits, would let scripts join two values together — a small building block that enables surprisingly powerful constructions like vaults and certain covenant designs, without needing an entirely new opcode.',
@@ -359,7 +359,7 @@ const details: Record<number, BipSeed> = {
   },
   348: {
     title: 'OP_CHECKSIGFROMSTACK',
-    topic: 'Signatures', layer: 'Consensus', status: 'Draft', difficulty: 'Technical', era: 'Active research',
+    topic: 'Signatures', layer: 'Consensus', status: 'Draft', difficulty: 'Advanced', era: 'Active research',
     plainSummary: 'A proposal to let a script check a signature against any message supplied on the stack, not just the transaction itself.',
     summary: 'Proposes signature verification over a message supplied directly by the stack.',
     inPlainTerms: 'Normally, Bitcoin scripts can only check a signature against the transaction that’s spending the coin. CSFS would let a script verify a signature over any message provided on the stack — opening the door to oracle-style constructions, vaults, and some interesting cross-chain and payment-pool designs.',
@@ -408,8 +408,11 @@ export const bips: Bip[] = Object.entries(details).map(([key, value]) => {
     relatedBips: number === 141 ? [143, 147, 341] : number === 341 ? [340, 342, 141] : number === 342 ? [340, 341, 347] : number === 119 ? [68, 112, 347] : number === 347 ? [342, 348, 119] : number === 348 ? [342, 347, 119] : [141, 341],
     authors: number === 341 || number === 342 ? ['Pieter Wuille', 'Jonas Nick', 'Anthony Towns'] : ['Bitcoin BIP contributors'],
     created,
+    content: '',
+    sourceUrl: source(number, 'Source', '').url,
     activated: value.status === 'Deployed' ? (number >= 340 ? '2021-11-14' : number >= 140 ? '2017-08-24' : '2016-07-04') : undefined,
     citations: [source(number, 'Abstract', value.summary), source(number, 'Specification', `Normative rules and rationale for BIP ${number}.`)],
+    generationStatus: 'reviewed',
   };
 });
 
