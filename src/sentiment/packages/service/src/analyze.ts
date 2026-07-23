@@ -10,6 +10,13 @@
  * the same three exported steps (`fetchBipNotes` -> `classifyNotes` ->
  * `summarizeSentiment`) ourselves and keep both halves of the result. If
  * `analyzeBip` ever returns its notes, collapse this back onto it.
+ *
+ * THIS IS NO LONGER THE DEFAULT PATH. `GET /sentiment/:bip` serves the
+ * zaps-and-votes tally (`zaps.ts`) unless asked for `?mode=llm`. Everything
+ * here still works and is still exercised; it is opt-in because it costs one
+ * model call per note and answers in tens of seconds, which a two-minute demo
+ * slot cannot spend. Nothing in here falls back to the fast path: if this
+ * fails, the caller gets a 502 that names this path.
  */
 import {
   classifyNotes,
@@ -54,7 +61,16 @@ export async function analyzeBipDetailed(
       });
       return { summary, notes };
     })(),
-    fetchOpinionTally(bipNumber, { relays: config.relays }),
+    fetchOpinionTally(bipNumber, {
+      relays: config.relays,
+      limit: config.voteLimit,
+      zapTrust: config.zapTrust,
+      lnurlTimeoutMs: config.lnurlTimeoutMs,
+      // The classification pass takes tens of seconds, so the tally is not on
+      // the critical path here; give it a roomier budget than the zap route's
+      // so a slow relay costs completeness there and nothing at all here.
+      budgetMs: Math.max(config.zapBudgetMs, 8_000),
+    }),
   ]);
 
   return { summary: analysis.summary, notes: analysis.notes, tally };

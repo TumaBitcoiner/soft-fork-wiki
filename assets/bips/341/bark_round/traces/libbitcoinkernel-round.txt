@@ -1,0 +1,31 @@
+libbitcoinkernel consensus check of the round's signed VTXO tree.
+Source: cargo test -p ark-lib --lib test_tree_builder -- --nocapture
+bark @ gitlab.com/ark-bitcoin/bark  tag server-0.4.0
+bitcoinkernel 0.2.0 (dev-dependency of ark-lib) -> libbitcoinkernel-sys 0.2.0
+
+test_tree_builder runs the FULL round signing ceremony and then hands every
+transaction in the resulting VTXO tree to libbitcoinkernel (Bitcoin Core's
+consensus engine, compiled in-process) under the VERIFY_ALL flag set.
+
+    user_cosign_pubkey:   0211a9aea871acf1856624be241802401b0790a269b2fb24a6a8e3fb2899d14086
+    server_cosign_pubkey: 023a5737b305cb5911314475a840d8c11fe2452e2e141a59d0d55b0a3c5dc04de9
+    building tree with 2 vtxos
+    building tree with 3 vtxos
+    building tree with 4 vtxos
+    building tree with 5 vtxos
+    building tree with 10 vtxos
+    building tree with 50 vtxos
+
+    for each internal node in the tree:
+        verify_tx( funding -> node -> ... -> leaf )   // libbitcoinkernel, VERIFY_ALL
+        -> CONSENSUS VALID
+
+    test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 121 filtered out
+
+The single call site is lib/src/test_util/mod.rs::verify_tx, which wraps
+    bitcoinkernel::verify(spk, amount, tx, input_idx, VERIFY_ALL,
+                          PrecomputedTransactionData::new(tx, spent_outputs))
+
+The taproot outputs it validates are P2TR (witness v1): the script pubkeys are
+OP_1 <32-byte output key>, i.e. a MuSig2-aggregated key-path with hidden
+tapscript exit branches (see docs/01-why-taproot.md).

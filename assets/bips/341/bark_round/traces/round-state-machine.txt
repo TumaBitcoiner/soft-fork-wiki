@@ -1,0 +1,23 @@
+Three-act round state machine — captured from a real integration test.
+Source: cargo test -p ark-testing --test bark refresh_all  (KEEP_ALL_TEST_DATA=1)
+        parsed from  test/bark/refresh_all/server/stdout.log
+bark @ gitlab.com/ark-bitcoin/bark  tag server-0.4.0
+
+  === ACT I === CollectingPayments  (gathering the participants)
+  00:00:17.772  RoundStarted                          Round started
+  00:00:17.772  AttemptingRound                       Initiating a round attempt
+  00:00:17.949  RoundPaymentRegistered                Registered payment from a participant
+  00:00:22.777  ReceivedRoundPayments                 Finished collecting round payments
+
+  === ACT II === SigningVtxoTree     (signing the tree)
+  00:00:22.789  RoundFundingTxBuilt                   Round funding tx built
+  00:00:22.792  ConstructingRoundVtxoTree             Beginning VTXO tree construction and signing
+  00:00:22.825  RoundVtxoSignaturesRegistered         Registered VTXO tree signatures from a participant
+  00:00:22.828  ReceivedRoundVtxoSignatures           Finished receiving VTXO tree signatures
+  00:00:22.845  CreatedSignedVtxoTree                 Created the final signed VTXO tree, ready to broadcast to pa
+
+  === ACT III === RoundFinished       (finished)
+  00:00:22.846  RoundVtxoCreated                  x2  New VTXO created in round
+  00:00:22.871  RoundFinished                         Round finished
+  00:00:22.901  BroadcastRoundFundingTx               Broadcasted round transaction to the network and all partici
+

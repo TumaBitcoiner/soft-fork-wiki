@@ -5,8 +5,22 @@ import type { Event } from "nostr-tools";
 import type { ClassifiedNote } from "@soft-fork-wiki/shared";
 import type { SentimentClassifier } from "./providers/index.js";
 
-/** How many classifications to run at once. Keep modest to respect rate limits. */
-const CONCURRENCY = 5;
+/**
+ * How many classifications to run at once.
+ *
+ * This is the single biggest lever on how long a cold BIP takes. Each note is
+ * one LLM call, and the calls run in batches that wait on each other — so a
+ * BIP with 118 notes at concurrency 5 is 24 sequential rounds, not one fast
+ * round. Raising it turns minutes into seconds, which is the difference
+ * between a live query being demoable and not.
+ *
+ * The ceiling is the provider's rate limit, not us. Override with
+ * SENTIMENT_CONCURRENCY if a key gets throttled.
+ */
+const CONCURRENCY = Math.max(
+  1,
+  Number(process.env.SENTIMENT_CONCURRENCY) || 16,
+);
 
 export async function classifyNotes(
   classifier: SentimentClassifier,
