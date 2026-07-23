@@ -115,10 +115,19 @@
      arguing about. We host the debate. We never tell you the answer.</p>
 
   <div class="picker">
-    <button data-bip="300" aria-pressed="true">BIP 300 &middot; Drivechains</button>
-    <button data-bip="360">BIP 360 &middot; Quantum</button>
-    <button data-bip="444">BIP 444 &middot; Datacarrier</button>
-    <button data-bip="119">BIP 119 &middot; CTV</button>
+    <button data-bip="300" aria-pressed="true">300 &middot; Drivechains</button>
+    <button data-bip="110">110 &middot; BIP 110</button>
+    <button data-bip="119">119 &middot; CTV</button>
+    <button data-bip="444">444 &middot; Datacarrier</button>
+    <button data-bip="360">360 &middot; Quantum</button>
+    <button data-bip="347">347 &middot; OP_CAT</button>
+    <button data-bip="118">118 &middot; ANYPREVOUT</button>
+    <button data-bip="54">54 &middot; Cleanup</button>
+    <button data-bip="341">341 &middot; Taproot</button>
+    <button data-bip="141">141 &middot; SegWit</button>
+    <button data-bip="340">340 &middot; Schnorr</button>
+    <button data-bip="352">352 &middot; Silent payments</button>
+    <button data-bip="158">158 &middot; Compact filters</button>
     <span class="modes">
       <button data-mode="zaps">Phase 1 &middot; Zaps</button>
       <button data-mode="llm" aria-pressed="true">Phase 2 &middot; The argument</button>
@@ -143,10 +152,11 @@
 </div>
 
 <script>
-const BASE = 'http://localhost:8002';
+const DATA = {"llm":{"54":{"bipNumber":54,"against":8,"neutral":54,"for":38,"totalVotes":0,"totalSats":0,"score":67,"recentNotes":[{"author":"npub1wphu…n8q9","choice":"Neutral","note":"🇩🇪 Bitcoin Optech Newsletter #414\n\nDer Newsletter dieser Woche beschreibt ein neues Projekt, das formale Verifikation auf das Bitcoin-Protokoll anwenden will. Außerdem enthalten sind unsere regelmäßigen Rubriken mit Ankündigungen neuer Releases und Release Candidates sowie Bes…","time":"6d"},{"author":"npub16v82…eqha","choice":"For","note":"I support BIP54. Insult me if you disagree.","time":"9d"},{"author":"npub18e4q…suvj","choice":"Neutral","note":"Bitcoin Core PR #34419 exposes BIP54 fields in GBT\n\nBitcoin Core PR #34419 extends `getblocktemplate` so BIP54-related `lock_time` and `sequence` values can be included in BIP22 block templates.\n\nThe relevant mechanism is tooling compatibility: mining software consuming template…","time":"11d"},{"author":"npub1wphu…n8q9","choice":"For","note":"🇩🇪 Bitcoin Optech Newsletter #412\n\nDiese Woche enthält der Newsletter unsere regelmäßigen Abschnitte mit einer Zusammenfassung der Diskussionen über Änderungen an Bitcoins Konsensregeln, Ankündigungen neuer Releases und Release Candidates sowie Beschreibungen wichtiger Änderun…","time":"20d"}],"mode":"llm","scoreBasis":"notes","hasSignal":true,"satsScore":null,"voteScore":30,"degraded":false,"totalSatsFor":0,"totalSatsAgainst":0,"counts":{"favour":25,"against":5,"neutral":36},"sampleSize":66,"uniqueVoters":0,"narrative":"Nostr users hold a slightly positive but divided stance on BIP 54, with 25 supporting it compared to 5 against, while a significant 36 remain neutral. Proponents see BIP 54 as a crucial \"consensus cleanup\" that addresses issues like time-warp vulnerabilities, improves validation time limits, and strengthens Merkle trees. Critics, however, dismiss it as \"a joke\" or unnecessary, with some arguing that its proposed fixes for problems like Time Warp attacks lack practical urgency.","computedAt":1784825057},"110":{"bipNumber":110,"sampleSize":118,"score":45,"counts":{"favour":63,"against":24,"neutral":31},"mode":"llm","narrative":"Nostr users largely support BIP 110, with a significant majority in favour compared to those against or neutral. Supporters view BIP 110 as crucial for protecting Bitcoin's original purpose as a simple digital currency, safeguarding it from perceived attempts by a \"Big Bitcoin industry\" or \"compromised\" developers to alter its core function and to combat issues like scams. Many also appreciate that it aims to create a cleaner and smaller blockchain, making it easier for individuals to run nodes, though specific reasons for opposition among the smaller group are not detailed in the provided discussion.","recentNotes":[{"author":"npub1…","choice":"For","note":"Bitcoin breaks the centralizing slavery chains and continues as Freedom Money for the whole Humanity. #BIP110","time":""}]},"118":{"bipNumber":118,"against":22,"neutral":43,"for":35,"totalVotes":0,"totalSats":0,"score":22,"recentNotes":[{"author":"npub17u5d…t4tp","choice":"Against","note":"I see you moved the goalposts from \"original script\" to \"live script\" 😏\n\nYour question is unclear. If you're referring to the Lugano panel where Luke and Mechanic insisted on ad hominem fallacies that Peter and I are bad actors, my goal was to get them to admit they were planni…","time":"16d"},{"author":"npub1824y…tzv8","choice":"For","note":"We likely need both. BIP 119 fixes the Security of the base layer now; BIP 118 fixes the Scalability of the second layer for the future.\n\nBitcoin is currently at a crossroads between pragmatism and purity.\n\nBIP 119 (CTV) is the Pragmatic Choice. It is simple, finished, and provi…","time":"7mo"},{"author":"npub1824y…tzv8","choice":"For","note":"We likely need both. BIP 119 fixes the Security of the base layer now; BIP 118 fixes the Scalability of the second layer for the future.","time":"7mo"},{"author":"npub1dge9…5uq3","choice":"Neutral","note":"BIP 119 looks promising, but gotta watch the AI side effects. BIP 118… that’s a whole next level.","time":"7mo"}],"mode":"llm","scoreBasis":"notes","hasSignal":true,"satsScore":null,"voteScore":13,"degraded":false,"totalSatsFor":0,"totalSatsAgainst":0,"counts":{"favour":25,"against":16,"neutral":31},"sampleSize":72,"uniqueVoters":0,"narrative":"The Nostr community shows a mixed but slightly positive lean towards BIP 118, with more users expressing support than opposition, though a large number remain neutral. Supporters generally see BIP 118 as crucial for the future scalability of Bitcoin's second layer and for improving off-chain protocols. However, some users advocate for alternative solutions like \"Inherited IDs,\" suggesting they could be safer or more powerful than BIP 118 for achieving similar scaling goals.","computedAt":1784825040},"119":{"bipNumber":119,"against":10,"neutral":59,"for":31,"totalVotes":0,"totalSats":0,"score":51,"recentNotes":[{"author":"npub1zhms…s67x","choice":"Neutral","note":"Interesting points, not sure whether recursive covenants are being considered in BIP119 or BIP448 so it might not be an actual threat.\n\nI honestly also fail to see how loss of fungibility might materialize since whomever wants to receive a bitcoin payment is going to decide whet…","time":"9d"},{"author":"npub18e4q…suvj","choice":"Neutral","note":"BIP 119 proposes OP_CHECKTEMPLATEVERIFY for Bitcoin templates\n\nJeremy Rubin submitted BIP 119 in bitcoin/bips PR #875, proposing OP_CHECKTEMPLATEVERIFY as a soft fork upgrade to OP_NOP4.\n\nThe opcode validates a 32-byte template hash against the serialized transaction structure a…","time":"1mo"},{"author":"npub14yzp…zldt","choice":"For","note":"Il 9 giugno 2026, **Second** — il laboratorio Bitcoin fondato da ex executive di Blockstream — ha portato in produzione **Bark**, la propria implementazione del [protocollo Ark](https://ark-protocol.org/), direttamente sulla mainnet di Bitcoin. È un momento atteso da anni nella …","time":"1mo"},{"author":"npub14yzp…zldt","choice":"Against","note":"Bitcoin PIPEs v2 è una soluzione crittografica che permette di aggiungere **funzionalità avanzate** a Bitcoin Layer 1, come i [covenants](https://glossario.bitcoinitalianetwork.com/covenant.html) (regole che limitano come e quando si possono spendere i bitcoin in futuro) e la ve…","time":"2mo"}],"mode":"llm","scoreBasis":"notes","hasSignal":true,"satsScore":null,"voteScore":21,"degraded":false,"totalSatsFor":0,"totalSatsAgainst":0,"counts":{"favour":40,"against":13,"neutral":76},"sampleSize":129,"uniqueVoters":0,"narrative":"The Nostr community is largely neutral on BIP 119, with a significant number (76) expressing no strong opinion, though more people are in favor (40) than against it (13). Supporters believe BIP 119 is a pragmatic, simple solution that would immediately enhance Bitcoin's base layer security and enable new features, garnering support from many technical experts. Conversely, opponents worry that its adoption could undermine Bitcoin's fundamental value as \"freedom money.\"","computedAt":1784824990},"141":{"bipNumber":141,"against":6,"neutral":51,"for":43,"totalVotes":0,"totalSats":0,"score":77,"recentNotes":[{"author":"npub1x9q8…csg7","choice":"Against","note":"Watched the whole thing. I think this is my first time listening to Luke on a pod. His position is right in many respects and pretty balanced.\n\nOne thing I’d push back on a bit is that BIP148 and BIP110 are actually quite different. It’s worth remembering that BIP91 was designed…","time":"1d"},{"author":"npub18z53…50l4","choice":"For","note":"***A structured rebuttal to Michael Saylor’s critique***\n\n### I. BITCOIN’S SECURITY MODEL & CONSENSUS INTEGRITY (1–20)\n\n1. BIP110 reduces attack surface by limiting oversized witness items and arbitrary data payloads, which lowers the risk of malformed or adversarial scripts exp…","time":"4d"},{"author":"npub1u87g…93f7","choice":"Neutral","note":"“The demonstrated lesson of fifteen years was: broad agreement is necessary, and even enormous power without broad agreement is insufficient.”\n\nWrong. Segwit activated because a *minority* of node runners ran UASF BIP148, which lead to miners capitulating and activating Segwit v…","time":"9d"},{"author":"npub1lcet…3apw","choice":"Neutral","note":"I am seeing where we get the discrepancy around signaling -- and it's because it was multiple BIPs for Segwit. BIP-141 signaling appears to coincide with the data on the dashboard I provided.","time":"10d"}],"mode":"llm","scoreBasis":"notes","hasSignal":true,"satsScore":null,"voteScore":38,"degraded":false,"totalSatsFor":0,"totalSatsAgainst":0,"counts":{"favour":53,"against":7,"neutral":62},"sampleSize":122,"uniqueVoters":0,"narrative":"The Nostr community generally views BIP 141, also known as SegWit, favorably, although a substantial number of users remain neutral. Those in favor highlight that SegWit was a critical upgrade that fixed transaction malleability, effectively increased block capacity using a weight-based accounting model without needing a hard fork, and paved the way for layer-2 solutions like the Lightning Network. While there are some neutral opinions, the provided posts do not elaborate on specific concerns or opposing arguments.","computedAt":1784825075},"158":{"bipNumber":158,"against":7,"neutral":34,"for":59,"totalVotes":0,"totalSats":0,"score":80,"recentNotes":[{"author":"npub1zthq…xm56","choice":"For","note":"On Silent Payments, I'm getting much more optimistic in the last hour or so, since deciding to dig into more detail. Seems like about 150 KB per block (BIP158 filter + 33 bytes per tx) is sufficient in terms of bandwidth. And this table of CPU-only scan times is much better than…","time":"2mo"},{"author":"npub1hkuk…432p","choice":"Neutral","note":"Bitcoin Optech newsletter #403 is here:\n\n- describes research around using binary fuse filters as an alternative to the GCS used in compact block filters\n- links to an idea for post-quantum HD wallets with fallback SPHINCS keys\n- summarizes discussion of a post-quantum output ty…","time":"2mo"},{"author":"npub16n8n…upfp","choice":"Against","note":"That's awesome! 🦅🔗 I love that you can connect Sparrow to Bitcoin Core without BIP158! Makes things so much easier, whether locally or through Toe. Keep it up! 💪💰","time":"7mo"},{"author":"npub18f3g…az3s","choice":"Neutral","note":"Puedes conectar #Sparrow a Bitcoin Core sin el BIP158. Ya sea por la red local o por Toe.","time":"7mo"}],"mode":"llm","scoreBasis":"notes","hasSignal":true,"satsScore":null,"voteScore":52,"degraded":false,"totalSatsFor":0,"totalSatsAgainst":0,"counts":{"favour":53,"against":6,"neutral":31},"sampleSize":90,"uniqueVoters":0,"narrative":"The Nostr network shows strong support for BIP 158, with 53 users in favor compared to only 6 against and 31 neutral. Supporters largely appreciate how BIP 158 enhances privacy and efficiency, allowing users to privately check their wallet transactions without needing to run a full Bitcoin node, which also makes wallet synchronization much faster. The provided posts do not detail specific reasons for the small opposition or the significant neutral stance.","computedAt":1784825081},"300":{"bipNumber":300,"against":19,"neutral":51,"for":30,"totalVotes":0,"totalSats":0,"score":24,"recentNotes":[{"author":"npub1ykgz…mpsh","choice":"For","note":"acktually\n\nnostr supports bip300","time":"25d"},{"author":"npub1sx7d…k49e","choice":"Neutral","note":"A curated list of 128+ X accounts covering the sovereign tech landscape -- privacy, open-source AI, censorship resistance, decentralized infrastructure, and more. Know of a project that should be on the list? Let me know!\n\n## 1\\. Browsers\n\n  * [@brave](https://x.com/brave) \\- Br…","time":"1mo"},{"author":"npub1l4a5…3dz4","choice":"Neutral","note":"Drivechains (BIP 300/301) yey or ney?","time":"2mo"},{"author":"npub1mdgx…j2aj","choice":"Neutral","note":"Paul \"Bip300\"  Sztorc","time":"2mo"}],"mode":"llm","scoreBasis":"notes","hasSignal":true,"satsScore":null,"voteScore":11,"degraded":false,"totalSatsFor":0,"totalSatsAgainst":0,"counts":{"favour":55,"against":34,"neutral":94},"sampleSize":183,"uniqueVoters":0,"narrative":"Nostr users are quite divided and largely neutral or unfamiliar with BIP 300, though among those expressing an opinion, there's a slight leaning towards support. Proponents view it as a potential solution they hope will take over, while critics are concerned it could be centralizing and suggest other options like Lightning or Ark are better.","computedAt":1784824990},"340":{"bipNumber":340,"against":0,"neutral":50,"for":50,"totalVotes":0,"totalSats":0,"score":100,"recentNotes":[{"author":"npub1ka0w…sgn6","choice":"Neutral","note":"# Nostr Event-Signing Code Review Sample\n\nThis public sample shows the structure and depth of a compact paid review. It is not a review of a buyer's private code.\n\n## Review Boundary\n\nFor one compact implementation, the paid review checks:\n\n- NIP-01 canonical event serialization…","time":"1mo"},{"author":"npub1ka0w…sgn6","choice":"Neutral","note":"5 USDC secp256k1 Schnorr / BIP340 code review. Public quality sample includes the review checklist and severity-ranked example findings: https://njump.me/9faa2c35440f80653bdbf0933c890aac7722c54ae13a7369b5e8dfe8dad934a5\n\nPrice-tagged listing: https://njump.me/b3a6778b46ad0d8ab687…","time":"1mo"},{"author":"npub1ka0w…sgn6","choice":"For","note":"# secp256k1 Schnorr Implementation Review - Sample\n\nTarget paid need: `a430f04d-e9f3-4689-980d-5845aacecc74`\n\nOffer scope: review one compact secp256k1 Schnorr implementation for correctness, edge cases, security footguns, and test coverage.\n\n## Buyer Inputs\n\n- Implementation fi…","time":"1mo"},{"author":"npub1ka0w…sgn6","choice":"Neutral","note":"Nostr / Bitcoin developers: 9 USDC fixed secp256k1 Schnorr + BIP340 code review. I check nonce derivation, tagged hashes, x-only keys, parity, signature parsing, invalid vectors, and Nostr compatibility. Classified: https://njump.me/1a871541bc394c3fbec2d72f239f797fb04cf87849f9d2…","time":"1mo"}],"mode":"llm","scoreBasis":"notes","hasSignal":true,"satsScore":null,"voteScore":50,"degraded":false,"totalSatsFor":0,"totalSatsAgainst":0,"counts":{"favour":6,"against":0,"neutral":6},"sampleSize":12,"uniqueVoters":0,"narrative":"The Nostr network demonstrates a clearly positive and receptive stance towards BIP 340, with no opposition recorded. Proponents showcase its practical benefits, such as efficient signature verification and enabling autonomous agents to coordinate using Nostr/BIP-340 keypairs. This is further supported by active code reviews and development efforts for Schnorr implementations within the community.","computedAt":1784825060},"341":{"bipNumber":341,"against":6,"neutral":28,"for":66,"totalVotes":0,"totalSats":0,"score":83,"recentNotes":[{"author":"npub1etjm…nr68","choice":"For","note":"#12\nhttps://image.nostr.build/73da7985bb1c0c6b499d656e29eb8bd243ad3fd465fdfe716c3afe4ecc6a8db8.jpg\n\n\n\n1. Concord - New Protocol\n\n\nConcord is a decentralized protocol built on Nostr that enables end-to-end encrypted communities and channels with Discord-like features, without cen…","time":"3d"},{"author":"npub19hs0…5jcn","choice":"Neutral","note":"---\n![image](https://image.nostr.build/21ff1acb9d4b75a3e35908a03ab96130e4b95bf2bd01adb0c9eb1b9b7d756265.jpg)\n\n\n\nnostr:npub18rdmnvrajwrp6srzpttz63934r58sh0sn9lwk3z57ykjzuzge4wqu6dhce\n\n\n> ### “I love Nostr…… but there ‘s fuckin noone here. I shall remain though as I believe in it.…","time":"3d"},{"author":"npub1c9gy…wghc","choice":"Against","note":"## 001 — The 2015 node that still works\n\nYou cannot run the 2015 version of Bitcoin Core today. The software will compile, it will connect, it will sync the chain from genesis, it will validate every block it sees, and it will report itself as fully caught up. But it is not vali…","time":"19d"},{"author":"npub18e4q…suvj","choice":"Neutral","note":"BIP449 proposes OP_TWEAKADD for Bitcoin Script\n\nJeremy Rubin opened Bitcoin BIPs PR #1944 on Apr 27, 2026 proposing BIP449: OP_TWEAKADD, a new Script opcode. The proposal is still open for community feedback, with a corresponding Bitcoin Dev mailing list post.\n\nMechanism: OP_TWE…","time":"1mo"}],"mode":"llm","scoreBasis":"notes","hasSignal":true,"satsScore":null,"voteScore":60,"degraded":false,"totalSatsFor":0,"totalSatsAgainst":0,"counts":{"favour":86,"against":8,"neutral":36},"sampleSize":130,"uniqueVoters":0,"narrative":"The Nostr community is overwhelmingly in favor of Bitcoin's BIP 341 (Taproot), with a significant majority expressing support and only a small number against or neutral. Supporters view Taproot as a crucial upgrade that improves privacy, reduces costs for multi-signature transactions, and enhances the Lightning Network, thus contributing to digital sovereignty and more efficient blockchain use. The provided posts do not detail specific arguments from those who oppose it, but the strong positive sentiment highlights its perceived benefits.","computedAt":1784825072},"347":{"bipNumber":347,"against":0,"neutral":83,"for":17,"totalVotes":0,"totalSats":0,"score":100,"recentNotes":[{"author":"npub18e4q…suvj","choice":"Neutral","note":"Bitcoin Core PR #29247 proposes OP_CAT for Tapscript\n\nBitcoin Core PR #29247 proposes implementing OP_CAT for Tapscript as specified in BIP-347, including opcode handling, verification flags, and tests.\n\nMechanically, this is code review/test surface for the proposed Tapscript b…","time":"11d"},{"author":"npub1e9vc…j93f","choice":"Neutral","note":"💬 : ตอนนี้ bitcoin dev commu กำลังถกเรื่องใหญ่ๆ อยู่หลายเรื่องมาก 🔥\n\n🔑 หัวข้อร้อนในชุมชน Bitcoin Dev ตอนนี้\n\n1. Covenants & New Opcodes (ดุเดือดที่สุด)\nมีหลายแพ็คเกจ soft fork ที่ถูกหารือกัน โดย CTV+CSFS (BIP119+BIP348) และ OP_TEMPLATEHASH เป็นตัวเลือกขั้นต่ำสุดที่ unlock ได้…","time":"3mo"},{"author":"npub186a9…hd06","choice":"Neutral","note":"## Crypto Insights\n\n### Proposal and Discussion on Introducing a New Bitcoin Script Opcode: OP\\_ISSUBSTR\n\n[This BIP](https://groups.google.com/g/bitcoindev/c/Ls9DWtDRbDc) proposes the introduction of two new opcodes: OP\\_ISSUBSTR and OP\\_ISSUBSTRVERIFY. Their relationship is sim…","time":"15mo"},{"author":"npub19u0c…8l6a","choice":"For","note":"At the end of 2024 I shared Satoshi’s message in the Genesis block on Twitter..\n\nYet, it seems the world in still in this stage of copium surrounding Bitcoin’s price action.\n\nTime for BIP347 too reach consensus this year.\nhttps://m.primal.net/PlEb.jpg","time":"16mo"}],"mode":"llm","scoreBasis":"notes","hasSignal":true,"satsScore":null,"voteScore":17,"degraded":false,"totalSatsFor":0,"totalSatsAgainst":0,"counts":{"favour":1,"against":0,"neutral":5},"sampleSize":6,"uniqueVoters":0,"narrative":"The Nostr network primarily maintains a neutral or observational stance on BIP 347, with no widespread debate evident. While one user explicitly supports its adoption and hopes for its consensus, most other posts merely provide informational links or describe the technical implementation of OP_CAT as specified in BIP 347. No specific arguments against the proposal were found in the provided discussions.","computedAt":1784825034},"352":{"bipNumber":352,"against":5,"neutral":27,"for":68,"totalVotes":0,"totalSats":0,"score":86,"recentNotes":[{"author":"npub1pww7…en60","choice":"For","note":"Silent Payments (BIP352) is superior than Paynym (BIP47), for both privacy and fees.\n\nCoinjoin has better privacy than Payjoin, but the fees are higher. So it's a tradeoff.","time":"8d"},{"author":"npub18e4q…suvj","choice":"Neutral","note":"Bitcoin Core PR #35301 proposes BIP-352 silent payment work\n\nBitcoin Core PR #35301, authored by Eunovo, is open proposed work for BIP-352 silent payments in Bitcoin Core. It includes unit tests using BIP-352 test vectors and is presented as a follow-up iteration to earlier impl…","time":"11d"},{"author":"npub16c9a…acfm","choice":"For","note":"There is a pattern in Bitcoin that repeats every few years. A clever, energetic developer wanders in, finds the rules frustrating, ignores seventeen years of discussion, ships a feature in a weekend, and announces they have [fixed Bitcoin](https://primal.net/e/nevent1qqsvtrqtdcj…","time":"1mo"},{"author":"npub1sec6…p0l7","choice":"For","note":"Amulet Arsenal: an offline, single-file Bitcoin self-custody suite. \n\nI have been building a family of Bitcoin self-custody tools called Amulet.\nLast week I've released the teaser : the Amulet Silent payment wallet, today the full suite is open to try.\nToday it lives at avbforge…","time":"1mo"}],"mode":"llm","scoreBasis":"notes","hasSignal":true,"satsScore":null,"voteScore":62,"degraded":false,"totalSatsFor":0,"totalSatsAgainst":0,"counts":{"favour":90,"against":7,"neutral":36},"sampleSize":133,"uniqueVoters":0,"narrative":"The Nostr community largely supports BIP 352 (Silent Payments), with a significant majority voting in favor. Supporters highlight its benefits for privacy and potentially lower fees compared to existing solutions, noting its active development for Bitcoin Core and integration into new self-custody wallets. However, some members express concerns about the potential for privacy breaches, such as inadvertently revealing donor identities if \"scan keys\" are exposed, and raise security questions about specific implementations that might involve sharing private keys.","computedAt":1784825079},"360":{"bipNumber":360,"against":8,"neutral":45,"for":47,"totalVotes":0,"totalSats":0,"score":72,"recentNotes":[{"author":"npub1yfda…vg3f","choice":"For","note":"Coinbase 公布后量子密码学计划，将升级密钥管理系统\n\nForesight News 消息，Coinbase 发布博文，介绍其在后量子密码学方面的准备工作。Coinbase 表示将从三方面推进相关工作：其一，为保护约 99.9% 托管资产的密钥管理系统 CoreKMS 开发后量子版本 PQ-CoreKMS，计划一年内交付支持后量子签名算法的自动化签名流程；其二，将于今年 8 月与斯坦福大学合作，召集比特币核心开发者、密码学家和研究人员举行首场后量子迁移研讨会；其三，作为比特币安全联盟（Bitcoin Security Consortium）创始成…","time":"4h"},{"author":"npub1g49u…tqvs","choice":"Neutral","note":"idk. it sounds like BIP360 takes care of quantum stuff. people can already just not use those exposed taproot methods, is that right? \n\nmaybe this would be a good way that Taproot dies--people are too afraid to use it bc of quantum threat of the exposed pubkey before spending.\n\n…","time":"1d"},{"author":"npub1kc6c…0vwv","choice":"Neutral","note":"‍Galaxy Pledges $5 Million for Bitcoin Quantum Readiness\n\nGalaxy Digital has launched the Bitcoin Quantum Readiness Initiative with up to $5 million in grants to safeguard Bitcoin against quantum computing threats. The initiative aims to address vulnerabilities before \"Q-Day,\" t…","time":"2d"},{"author":"npub158x7…76wm","choice":"Neutral","note":"Does bip110 block bip360? Or is just wasting time?","time":"5d"}],"mode":"llm","scoreBasis":"notes","hasSignal":true,"satsScore":null,"voteScore":40,"degraded":false,"totalSatsFor":0,"totalSatsAgainst":0,"counts":{"favour":80,"against":13,"neutral":76},"sampleSize":169,"uniqueVoters":0,"narrative":"Sentiment on Nostr leans generally favorable towards BIP 360, a proposed quantum-resistant upgrade for Bitcoin, with 80 users expressing support compared to 13 against and 76 neutral. Supporters view BIP 360 as a crucial, proactive measure to safeguard Bitcoin from future quantum attacks, arguing it prevents key theft and maintains trust well before such threats become imminent. Conversely, critics suggest the quantum threat is overblown or even disinformation, with some believing the network can achieve stability without this upgrade.","computedAt":1784825011},"444":{"bipNumber":444,"against":19,"neutral":59,"for":22,"totalVotes":0,"totalSats":0,"score":6,"recentNotes":[{"author":"npub1emdt…c9aw","choice":"Neutral","note":"I’m speaking to futures contract  https://github.com/Rob1Ham/BIP-444-Futures","time":"8d"},{"author":"npub12qz5…pdx8","choice":"Against","note":"Anyone unironically supporting BIP444/110 is NGMI","time":"5mo"},{"author":"npub1q8ks…p6gc","choice":"Against","note":"Same strategy he will use on miners through legal threats. They already showed their true colors discussing \"legal action\" in bip444.","time":"5mo"},{"author":"npub17u5d…t4tp","choice":"Neutral","note":"The code and explanation is available here:\nhttps://github.com/Rob1Ham/BIP-444-Futures","time":"5mo"}],"mode":"llm","scoreBasis":"notes","hasSignal":true,"satsScore":null,"voteScore":2,"degraded":false,"totalSatsFor":0,"totalSatsAgainst":0,"counts":{"favour":28,"against":25,"neutral":76},"sampleSize":129,"uniqueVoters":0,"narrative":"Among Nostr users, opinions on BIP 444 are quite divided, with a significant majority expressing neutrality. Among those who have a strong opinion, sentiment is split, with slightly more users in favor than against. Supporters believe BIP 444 is crucial for Bitcoin's future price growth and a necessary solution to past negative impacts, while opponents argue it constitutes an attack on Bitcoin and could be detrimental to users' money.","computedAt":1784824990}},"zaps":{"54":{"bipNumber":54,"mode":"zaps","zapSats":11917,"zapCount":37,"reactions":417,"notesConsidered":66,"appVotes":0,"appSats":0,"hasSplit":true,"satsFavour":664,"satsAgainst":21,"satsNeutral":10364,"satsScore":94},"110":{"bipNumber":110,"mode":"zaps","zapSats":1681,"zapCount":40,"reactions":229,"notesConsidered":118,"appVotes":0,"appSats":0,"hasSplit":true,"satsFavour":7191,"satsAgainst":694,"satsNeutral":395,"satsScore":82},"118":{"bipNumber":118,"mode":"zaps","zapSats":67,"zapCount":6,"reactions":38,"notesConsidered":72,"appVotes":0,"appSats":0,"hasSplit":false,"satsFavour":0,"satsAgainst":0,"satsNeutral":46,"satsScore":0},"119":{"bipNumber":119,"mode":"zaps","zapSats":1851,"zapCount":30,"reactions":210,"notesConsidered":129,"appVotes":0,"appSats":0,"satsFavour":625,"satsAgainst":542,"satsNeutral":675,"satsScore":7,"hasSplit":true},"141":{"bipNumber":141,"mode":"zaps","zapSats":6227,"zapCount":43,"reactions":213,"notesConsidered":122,"appVotes":0,"appSats":0,"hasSplit":true,"satsFavour":1253,"satsAgainst":3095,"satsNeutral":1042,"satsScore":-42},"158":{"bipNumber":158,"mode":"zaps","zapSats":76353,"zapCount":77,"reactions":375,"notesConsidered":90,"appVotes":0,"appSats":0,"satsFavour":75164,"satsAgainst":0,"satsNeutral":63,"satsScore":100,"hasSplit":true},"300":{"bipNumber":300,"mode":"zaps","zapSats":10117,"zapCount":44,"reactions":251,"notesConsidered":183,"appVotes":0,"appSats":0,"satsFavour":6205,"satsAgainst":3870,"satsNeutral":0,"satsScore":23,"hasSplit":true},"340":{"bipNumber":340,"mode":"zaps","zapSats":30903,"zapCount":15,"reactions":103,"notesConsidered":12,"appVotes":0,"appSats":0,"hasSplit":true,"satsFavour":8688,"satsAgainst":192,"satsNeutral":22022,"satsScore":96},"341":{"bipNumber":341,"mode":"zaps","zapSats":1444,"zapCount":25,"reactions":241,"notesConsidered":130,"appVotes":0,"appSats":0,"hasSplit":true,"satsFavour":296,"satsAgainst":23,"satsNeutral":841,"satsScore":86},"347":{"bipNumber":347,"mode":"zaps","zapSats":509,"zapCount":2,"reactions":133,"notesConsidered":6,"appVotes":0,"appSats":0,"hasSplit":false,"satsFavour":0,"satsAgainst":0,"satsNeutral":509,"satsScore":0},"352":{"bipNumber":352,"mode":"zaps","zapSats":38411,"zapCount":53,"reactions":432,"notesConsidered":133,"appVotes":0,"appSats":0,"hasSplit":true,"satsFavour":8449,"satsAgainst":321,"satsNeutral":2297,"satsScore":93},"360":{"bipNumber":360,"mode":"zaps","zapSats":1842,"zapCount":35,"reactions":294,"notesConsidered":169,"appVotes":0,"appSats":0,"satsFavour":815,"satsAgainst":252,"satsNeutral":775,"satsScore":53,"hasSplit":true},"444":{"bipNumber":444,"mode":"zaps","zapSats":4109,"zapCount":44,"reactions":228,"notesConsidered":129,"appVotes":0,"appSats":0,"satsFavour":21,"satsAgainst":3258,"satsNeutral":830,"satsScore":-99,"hasSplit":true}}};
 let bip = 300, mode = 'llm';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const num = n => (n || 0).toLocaleString();
 
 document.querySelectorAll('[data-bip]').forEach(b => b.onclick = () => {
   bip = +b.dataset.bip;
@@ -168,80 +178,89 @@ function lean(score, sided) {
   return 'leaning strongly against';
 }
 
-function render(d, ms) {
-  const c = d.counts || {favour:0, against:0, neutral:0};
-  const sided = (c.favour || 0) + (c.against || 0);
-  const n = d.sampleSize || 0;
-  $('#stamp').textContent =
-    `${d.mode === 'llm' ? 'PHASE 2 · READ THE ARGUMENT' : 'PHASE 1 · COUNT THE ZAPS'} · ${ms} MS`;
-
-  // Nothing found at all: say so plainly rather than drawing a needle at 0,
-  // because "nobody weighed in" and "evenly split" are different answers.
-  if (!n && !d.totalVotes) {
-    $('#out').innerHTML = `<div class="empty">No one has weighed in on BIP ${bip} yet.
-      Be the first to add a signal.</div>
-      <div class="warn">PHASE 1 counts sats zapped for and against, straight off the
-      relays — no LLM, ${ms} ms. Nothing has been zapped yet, so there is nothing to
-      count. That is the honest answer, not an error.<br><br>
-      Switch to PHASE 2 to read what people are already arguing about.</div>`;
-    return;
-  }
-
-  const pos = ((d.score + 100) / 200) * 100;
+function gaugeHtml(score) {
+  const pos = ((score + 100) / 200) * 100;
   const ticks = [0,10,20,30,40,50,60,70,80,90,100]
-    .map(p => `<div class="tick${p===50?' mid':''}" style="left:${p}%"></div>`).join('');
-
-  const notes = (d.recentNotes || []).slice(0, 4).map(nt => `
-    <div class="note">
-      <div class="who">${esc(nt.author)}<br>
-        <span class="choice ${esc(nt.choice)}">${esc(nt.choice)}</span></div>
-      <div class="txt">${esc(String(nt.note).slice(0, 240))}</div>
-    </div>`).join('');
-
-  $('#out').innerHTML = `
-    <div class="gauge">
-      <div class="scale">${ticks}<div class="axis"></div>
-        <div class="needle" style="left:${pos}%"></div></div>
-      <div class="ends"><span>&#128078; Not good</span><span>Split</span>
-        <span>Good for Bitcoin &#128077;</span></div>
-    </div>
-
-    <div class="reading">
-      <div class="score">${d.score > 0 ? '+' : ''}${d.score}</div>
-      <div class="lean">${lean(d.score, sided)}</div>
-    </div>
-
-    <div class="counts">
-      <div><span>Posts read</span><b>${n}</b></div>
-      <div><span>&#128077; Good</span><b>${c.favour || 0}</b></div>
-      <div><span>&#128078; Not good</span><b>${c.against || 0}</b></div>
-      <div><span>&#129300; Not sure</span><b>${c.neutral || 0}</b></div>
-      <div><span>Zapped</span><b>${(d.totalSats || 0).toLocaleString()}<span
-        style="font-size:11px"> sats</span></b></div>
-    </div>
-
-    ${d.narrative ? `<div class="narrative">${esc(d.narrative)}</div>` : ''}
-    ${notes ? `<div class="notes">${notes}</div>` : ''}
-
-    ${sided < 5 ? `<div class="warn">ONLY ${sided} PEOPLE TOOK A SIDE — the needle is
-      extreme because the sample is tiny, not because opinion is. Treat as indicative.</div>` : ''}
-  `;
+    .map(x => '<div class="tick' + (x === 50 ? ' mid' : '') + '" style="left:' + x + '%"></div>').join('');
+  return '<div class="gauge"><div class="scale">' + ticks +
+    '<div class="axis"></div><div class="needle" style="left:' + pos + '%"></div></div>' +
+    '<div class="ends"><span>&#128078; Not good</span><span>Split</span>' +
+    '<span>Good for Bitcoin &#128077;</span></div></div>';
 }
 
-async function load() {
-  $('#ph').textContent = `Where people stand · BIP ${bip}`;
-  $('#out').innerHTML = `<div class="spin">Reading the relays…${
-    mode === 'llm' ? ' first read of a busy proposal can take a minute' : ''}</div>`;
-  const t0 = performance.now();
-  try {
-    const r = await fetch(`${BASE}/sentiment/${bip}?mode=${mode}`);
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    render(await r.json(), Math.round(performance.now() - t0));
-  } catch (e) {
-    $('#out').innerHTML = `<div class="empty">Couldn't reach the sentiment service.</div>
-      <div class="warn">${esc(e.message)} — is it running on ${BASE}?<br>
-      cd src/sentiment &amp;&amp; npx pnpm@9 --filter @soft-fork-wiki/service dev</div>`;
+/* PHASE 2 — the LLM read the posts and sorted them. */
+function render(d) {
+  const c = d.counts || {favour:0, against:0, neutral:0};
+  const sided = (c.favour || 0) + (c.against || 0);
+  $('#stamp').textContent = 'PHASE 2 \u00B7 READ THE ARGUMENT \u00B7 ' + (d.sampleSize || 0) + ' POSTS';
+
+  const notes = (d.recentNotes || []).slice(0, 4).map(nt =>
+    '<div class="note"><div class="who">' + esc(nt.author) + '<br><span class="choice ' +
+    esc(nt.choice) + '">' + esc(nt.choice) + '</span></div><div class="txt">' +
+    esc(String(nt.note).slice(0, 260)) + '</div></div>').join('');
+
+  $('#out').innerHTML = gaugeHtml(d.score) +
+    '<div class="reading"><div class="score">' + (d.score > 0 ? '+' : '') + d.score +
+    '</div><div class="lean">' + lean(d.score, sided) + '</div></div>' +
+    '<div class="counts">' +
+      '<div><span>Posts read</span><b>' + num(d.sampleSize) + '</b></div>' +
+      '<div><span>&#128077; Good</span><b>' + num(c.favour) + '</b></div>' +
+      '<div><span>&#128078; Not good</span><b>' + num(c.against) + '</b></div>' +
+      '<div><span>&#129300; Not sure</span><b>' + num(c.neutral) + '</b></div>' +
+    '</div>' +
+    (d.narrative ? '<div class="narrative">' + esc(d.narrative) + '</div>' : '') +
+    (notes ? '<div class="notes">' + notes + '</div>' : '') +
+    (sided < 5 ? '<div class="warn">ONLY ' + sided + ' PEOPLE TOOK A SIDE \u2014 the needle is ' +
+      'extreme because the sample is tiny, not because opinion is.</div>' : '');
+}
+
+/* PHASE 1 — real sats zapped onto posts about this proposal. No AI. */
+function renderZaps(z) {
+  if (!z) { $('#out').innerHTML = '<div class="empty">No zap reading captured.</div>'; return; }
+  $('#stamp').textContent = 'PHASE 1 \u00B7 COUNT THE ZAPS \u00B7 NO AI';
+  const avg = z.zapCount ? Math.round(z.zapSats / z.zapCount) : 0;
+  const split = z.hasSplit ? gaugeHtml(z.satsScore) +
+    '<div class="reading"><div class="score">' + (z.satsScore > 0 ? '+' : '') + z.satsScore +
+    '</div><div class="lean">money-weighted \u2014 ' + lean(z.satsScore, 1) + '</div></div>' +
+    '<div class="counts">' +
+      '<div><span>\uD83D\uDC4D Sats for</span><b>' + num(z.satsFavour) + '</b></div>' +
+      '<div><span>\uD83D\uDC4E Sats against</span><b>' + num(z.satsAgainst) + '</b></div>' +
+      '<div><span>\uD83E\uDD14 Sats neutral</span><b>' + num(z.satsNeutral) + '</b></div>' +
+    '</div>' : '';
+  $('#out').innerHTML = split +
+    '<div class="reading"><div class="score">' + num(z.zapSats) +
+    '</div><div class="lean">sats zapped onto posts about this proposal</div></div>' +
+    '<div class="counts">' +
+      '<div><span>Zaps</span><b>' + num(z.zapCount) + '</b></div>' +
+      '<div><span>Avg zap</span><b>' + num(avg) + '<span style="font-size:11px"> sats</span></b></div>' +
+      '<div><span>Reactions</span><b>' + num(z.reactions) + '</b></div>' +
+      '<div><span>Posts</span><b>' + num(z.notesConsidered) + '</b></div>' +
+      '<div><span>Votes in app</span><b>' + num(z.appVotes) + '</b></div>' +
+    '</div>' +
+    '<div class="narrative">This is real money, already spent. People paid <b>' + num(z.zapSats) +
+    ' sats</b> across <b>' + num(z.zapCount) + ' zaps</b> to back posts about this proposal \u2014 ' +
+    'read straight off the relays, no AI involved. Every receipt is verified against the ' +
+    'recipient\u2019s own Lightning provider, so a forged zap cannot buy its way up.</div>' +
+    (z.hasSplit
+      ? '<div class="warn">The split above attributes each zap to the stance of the post it ' +
+        'paid for \u2014 real money, sorted by what the post actually argues.</div>'
+      : '<div class="warn">No for/against split captured for this proposal \u2014 the total ' +
+        'above is real, the direction was not computed. See Phase 2 for direction.</div>') +
+    '<div class="warn" style="display:none">A zap on someone\u2019s post shows HOW MUCH people care, not which way ' +
+    'they lean \u2014 an ordinary zap carries no for/against. Direction is Phase 2\u2019s job. ' +
+    'Votes cast inside the app are counted separately and stand at ' + num(z.appVotes) +
+    ', because nobody has voted here yet.</div>';
+}
+
+function load() {
+  $('#ph').textContent = 'Where people stand \u00B7 BIP ' + bip;
+  if (mode === 'llm') {
+    const d = DATA.llm[bip];
+    if (d) return render(d);
+    $('#out').innerHTML = '<div class="empty">No reading captured for this proposal.</div>';
+    return;
   }
+  renderZaps(DATA.zaps[bip]);
 }
 load();
 </script>
