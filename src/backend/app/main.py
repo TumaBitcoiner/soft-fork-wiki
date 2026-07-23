@@ -4,12 +4,13 @@ import sqlite3
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, Optional
 
+import httpx
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import db, ingest, repository
 from .config import AppConfig, load_config
-from .models import BipResponse, HealthResponse, RefreshResponse
+from .models import BipResponse, ExplainRequest, ExplainResponse, HealthResponse, RefreshResponse
 
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
@@ -105,8 +106,8 @@ def create_app(config: Optional[AppConfig] = None) -> FastAPI:
         query = "SELECT * FROM bips"
         params: list[object] = []
         if status:
-            query += " WHERE status = ?"
-            params.append(ingest.normalize_status(status))
+            query += " WHERE lower(status) = ?"
+            params.append(ingest.normalize_status_filter(status))
         query += " ORDER BY bip_number ASC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
         rows = connection.execute(query, params).fetchall()
@@ -187,6 +188,26 @@ def create_app(config: Optional[AppConfig] = None) -> FastAPI:
         return RefreshResponse(
             changed=ingest.ingest_repo(connection, app_config.bips_repo_path)
         )
+
+    @app.post("/api/explain", response_model=ExplainResponse)
+    async def explain(payload: ExplainRequest) -> ExplainResponse:
+        try:
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.post(
+                    "http://localhost:8001/explain",
+                    json=payload.model_dump(),
+                )
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=503, detail="LLM backend unavailable") from exc
+
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=response.text)
+
+        data = response.json()
+        try:
+            return ExplainResponse(**data)
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail="Invalid LLM response") from exc
 
     return app
 

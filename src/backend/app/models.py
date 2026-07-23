@@ -6,9 +6,11 @@ from pydantic import BaseModel, Field
 BipStatus = Literal[
     "Draft",
     "Proposed",
+    "Complete",
     "Final",
     "Active",
     "Deployed",
+    "Closed",
     "Rejected",
     "Withdrawn",
     "Replaced",
@@ -55,3 +57,17 @@ class HealthResponse(BaseModel):
 
 class RefreshResponse(BaseModel):
     changed: int
+
+
+class ExplainRequest(BaseModel):
+    bip_number: int
+
+
+class ExplainResponse(BaseModel):
+    bip_number: int
+    summary: str
+    model: str
+    prompt_version: str
+    created_at: str
+    updated_at: str
+    cached: bool

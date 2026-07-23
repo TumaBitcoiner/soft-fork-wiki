@@ -3,11 +3,15 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 backend_pid=""
+llm_backend_pid=""
 frontend_pid=""
 
 cleanup() {
   if [[ -n "${backend_pid}" ]]; then
     kill "${backend_pid}" 2>/dev/null || true
+  fi
+  if [[ -n "${llm_backend_pid}" ]]; then
+    kill "${llm_backend_pid}" 2>/dev/null || true
   fi
   if [[ -n "${frontend_pid}" ]]; then
     kill "${frontend_pid}" 2>/dev/null || true
@@ -26,12 +30,28 @@ if [[ ! -d "${repo_root}/src/frontend/node_modules" ]]; then
   exit 1
 fi
 
+if [[ ! -f "${repo_root}/config.json" ]]; then
+  echo "Missing config.json required by src/llm-backend." >&2
+  exit 1
+fi
+
+if ! "${repo_root}/.venv/bin/python" -c "import fastapi, httpx" >/dev/null 2>&1; then
+  echo "LLM backend dependencies are missing. Run: pip install -r src/llm-backend/requirements.txt" >&2
+  exit 1
+fi
+
 cd "${repo_root}"
 "${repo_root}/.venv/bin/uvicorn" app.main:app \
   --app-dir src/backend \
   --reload \
   --port 8000 &
 backend_pid=$!
+
+"${repo_root}/.venv/bin/uvicorn" app.main:app \
+  --app-dir src/llm-backend \
+  --reload \
+  --port 8001 &
+llm_backend_pid=$!
 
 npm --prefix src/frontend run dev &
 frontend_pid=$!

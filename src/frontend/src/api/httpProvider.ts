@@ -89,7 +89,41 @@ export const httpProvider: ApiProvider = {
   },
   getBip: (bipNumber) => request(`/api/bips/${bipNumber}`),
   getBipMetadata: (bipNumber) => request(`/api/bips/${bipNumber}/meta`),
-  askBips: unavailable('Ask Anything'),
+  async askBips(payload) {
+    if (!payload.bipNumber) {
+      throw new Error('Select a BIP to ask about.');
+    }
+    const response = await request<{
+      bip_number: number;
+      summary: string;
+      model: string;
+      prompt_version: string;
+      created_at: string;
+      updated_at: string;
+      cached: boolean;
+    }>(
+      '/api/explain',
+      {
+        method: 'POST',
+        body: JSON.stringify({ bip_number: payload.bipNumber }),
+      },
+    );
+
+    const summary = (response.summary ?? '').trim();
+    return {
+      question: payload.question,
+      shortAnswer: summary || 'No summary returned yet.',
+      inPlainTerms: summary,
+      whatBipsSay: summary,
+      confidence: 0.5,
+      coverage: 0.5,
+      coverageTier: 'Partial',
+      citations: [],
+      relatedBips: [],
+      followUps: [],
+      caveat: 'Generated summary without citations.',
+    };
+  },
   getTimeline: unavailable('Timeline'),
   getSentiment: unavailable('Sentiment'),
   submitSentiment: unavailable('Sentiment submission'),

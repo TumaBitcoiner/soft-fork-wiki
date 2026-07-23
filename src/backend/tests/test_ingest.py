@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from app.ingest import build_record, normalize_status, parse_header
+from app.ingest import build_record, parse_header
 
 
 SAMPLE_BIP = """<pre>
@@ -34,8 +34,7 @@ def test_parse_bip_metadata() -> None:
     assert len(record.content_hash) == 64
 
 
-def test_status_normalization() -> None:
-    assert normalize_status("Complete") == "Final"
-    assert normalize_status(" active ") == "Active"
-    assert normalize_status("Obsolete") == "Replaced"
-    assert normalize_status("Something new") == "Unknown"
+def test_status_passthrough() -> None:
+    record = build_record(Path("bip-0119.mediawiki"), SAMPLE_BIP)
+    assert record is not None
+    assert record.status == "Draft"

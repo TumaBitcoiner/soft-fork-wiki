@@ -76,9 +76,13 @@ Frontend, in a second terminal:
 npm --prefix src/frontend run dev
 ```
 
-The old `src/llm-backend` and `src/sentiment` directories are preserved, but
-they are not separate processes in the Phase 1 local launch. Their functionality
-will be integrated into the unified backend incrementally.
+The `src/llm-backend` service now runs alongside the main backend in the local
+launcher. It requires a repo-root `config.json` with `bips_db_path` pointing at
+the Phase 1 SQLite database and a valid `ppq_api_key`.
+
+The `src/sentiment` directory is preserved but is not part of the Phase 1 local
+launch. Its functionality will be integrated into the unified backend
+incrementally.
 
 ## Explicit frontend mock mode
 

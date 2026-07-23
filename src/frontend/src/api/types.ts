@@ -1,9 +1,11 @@
 export type BipStatus =
   | 'Draft'
   | 'Proposed'
+  | 'Complete'
   | 'Final'
   | 'Active'
   | 'Deployed'
+  | 'Closed'
   | 'Rejected'
   | 'Withdrawn'
   | 'Replaced'
