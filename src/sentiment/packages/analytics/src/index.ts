@@ -12,5 +12,6 @@ export * from "./stats.js";
 export * from "./normalize.js";
 export * from "./groups.js";
 export * from "./activation.js";
+export * from "./activations.js";
 export * from "./trends.js";
 export * from "./analyze.js";
