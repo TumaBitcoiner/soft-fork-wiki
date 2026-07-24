@@ -238,25 +238,7 @@ export function AskPage() {
   const [question, setQuestion] = useState(initial);
   const [mode, setMode] = useState<AskMode>('Balanced');
   const mutation = useMutation({
-    mutationFn: async (payload: { question: string; mode: AskMode; bipNumber?: number }) => {
-      if (!payload.bipNumber) {
-        return apiClient.askBipChat(payload);
-      }
-
-      const explainPromise = apiClient.askBipExplain(payload);
-      const latestAnswerPromise = apiClient.getLatestAnswer(payload.bipNumber);
-      const chatPromise = origin === 'explore' ? Promise.resolve(null) : apiClient.askBipChat(payload);
-      const [explain, latestAnswer, chat] = await Promise.all([explainPromise, latestAnswerPromise, chatPromise]);
-
-      const latestText = latestAnswer?.answer?.trim() || chat?.shortAnswer || explain.shortAnswer;
-      return {
-        ...explain,
-        question: chat?.question ?? explain.question,
-        shortAnswer: latestText || 'No answer returned yet.',
-        inPlainTerms: explain.inPlainTerms,
-        whatBipsSay: '',
-      };
-    },
+    mutationFn: origin === 'explore' ? apiClient.askBipExplain : apiClient.askBipChat,
   });
 
   useEffect(() => {

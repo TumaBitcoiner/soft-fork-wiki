@@ -74,15 +74,6 @@ export const mockProvider: ApiProvider = {
   async askBipExplain(payload: AskPayload) {
     return mockProvider.askBips(payload);
   },
-  async getLatestAnswer(bipNumber: number) {
-    await wait(120);
-    const bip = bips.find((item) => item.number === bipNumber);
-    if (!bip) return null;
-    return {
-      question: `What should I understand about BIP ${bip.number}?`,
-      answer: bip.plainSummary,
-    };
-  },
   async askBipChat(payload: AskPayload) {
     return mockProvider.askBips(payload);
   },

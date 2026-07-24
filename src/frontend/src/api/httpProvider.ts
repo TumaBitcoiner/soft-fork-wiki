@@ -127,28 +127,6 @@ export const httpProvider: ApiProvider = {
   askBipExplain(payload) {
     return httpProvider.askBips(payload);
   },
-  async getLatestAnswer(bipNumber) {
-    try {
-      const response = await request<{
-        bip_number: number;
-        question: string;
-        answer: string;
-        model: string;
-        prompt_version: string;
-        created_at: string;
-        updated_at: string;
-      }>(`/api/last-answer/${bipNumber}`);
-      return {
-        question: response.question,
-        answer: response.answer,
-      };
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('API request failed (404)')) {
-        return null;
-      }
-      throw error;
-    }
-  },
   async askBipChat(payload) {
     if (!payload.bipNumber) {
       throw new Error('Select a BIP to ask about.');
