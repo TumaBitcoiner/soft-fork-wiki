@@ -13,6 +13,7 @@ from .config import AppConfig, load_config
 from .models import (
     AskRequest,
     AskResponse,
+    BipOverviewResponse,
     BipResponse,
     ExplainRequest,
     ExplainResponse,
@@ -95,6 +96,38 @@ def create_app(config: Optional[AppConfig] = None) -> FastAPI:
             yield connection
         finally:
             connection.close()
+
+    async def llm_request(
+        method: str,
+        path: str,
+        payload: Optional[dict] = None,
+        timeout: float = 60.0,
+    ) -> dict:
+        try:
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                response = await client.request(
+                    method,
+                    app_config.llm_base_url.rstrip("/") + path,
+                    json=payload,
+                )
+        except httpx.HTTPError as exc:
+            raise HTTPException(
+                status_code=503,
+                detail="LLM backend unavailable",
+            ) from exc
+        if response.status_code != 200:
+            try:
+                detail = response.json().get("detail", response.text)
+            except (ValueError, AttributeError):
+                detail = response.text
+            raise HTTPException(status_code=response.status_code, detail=detail)
+        try:
+            data = response.json()
+        except ValueError as exc:
+            raise HTTPException(status_code=502, detail="Invalid LLM response") from exc
+        if not isinstance(data, dict):
+            raise HTTPException(status_code=502, detail="Invalid LLM response")
+        return data
 
     @app.get("/health", response_model=HealthResponse)
     async def health(connection: sqlite3.Connection = Depends(db_dependency)) -> HealthResponse:
@@ -200,19 +233,7 @@ def create_app(config: Optional[AppConfig] = None) -> FastAPI:
 
     @app.post("/api/explain", response_model=ExplainResponse)
     async def explain(payload: ExplainRequest) -> ExplainResponse:
-        try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                response = await client.post(
-                    "http://localhost:8001/explain",
-                    json=payload.model_dump(),
-                )
-        except httpx.HTTPError as exc:
-            raise HTTPException(status_code=503, detail="LLM backend unavailable") from exc
-
-        if response.status_code != 200:
-            raise HTTPException(status_code=response.status_code, detail=response.text)
-
-        data = response.json()
+        data = await llm_request("POST", "/explain", payload.model_dump())
         try:
             return ExplainResponse(**data)
         except Exception as exc:
@@ -220,19 +241,7 @@ def create_app(config: Optional[AppConfig] = None) -> FastAPI:
 
     @app.post("/api/ask", response_model=AskResponse)
     async def ask(payload: AskRequest) -> AskResponse:
-        try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                response = await client.post(
-                    app_config.llm_base_url.rstrip("/") + "/ask",
-                    json=payload.model_dump(),
-                )
-        except httpx.HTTPError as exc:
-            raise HTTPException(status_code=503, detail="LLM backend unavailable") from exc
-
-        if response.status_code != 200:
-            raise HTTPException(status_code=response.status_code, detail=response.text)
-
-        data = response.json()
+        data = await llm_request("POST", "/ask", payload.model_dump())
         try:
             return AskResponse(**data)
         except Exception as exc:
@@ -240,20 +249,57 @@ def create_app(config: Optional[AppConfig] = None) -> FastAPI:
 
     @app.get("/api/last-answer/{bip_number}", response_model=LastAnswerResponse)
     async def last_answer(bip_number: int) -> LastAnswerResponse:
-        try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                response = await client.get(
-                    app_config.llm_base_url.rstrip("/") + f"/last-answer/{bip_number}",
-                )
-        except httpx.HTTPError as exc:
-            raise HTTPException(status_code=503, detail="LLM backend unavailable") from exc
-
-        if response.status_code != 200:
-            raise HTTPException(status_code=response.status_code, detail=response.text)
-
-        data = response.json()
+        data = await llm_request("GET", f"/last-answer/{bip_number}")
         try:
             return LastAnswerResponse(**data)
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail="Invalid LLM response") from exc
+
+    @app.get(
+        "/api/bips/{bip_number}/overview",
+        response_model=BipOverviewResponse,
+    )
+    async def get_bip_overview(bip_number: int) -> BipOverviewResponse:
+        data = await llm_request("GET", f"/overview/{bip_number}", timeout=300.0)
+        try:
+            return BipOverviewResponse(**data)
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail="Invalid LLM response") from exc
+
+    @app.post(
+        "/api/bips/{bip_number}/overview",
+        response_model=BipOverviewResponse,
+    )
+    async def generate_bip_overview(bip_number: int) -> BipOverviewResponse:
+        data = await llm_request(
+            "POST",
+            "/overview",
+            {"bip_number": bip_number},
+            timeout=300.0,
+        )
+        try:
+            return BipOverviewResponse(**data)
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail="Invalid LLM response") from exc
+
+    @app.post(
+        "/api/admin/bips/{bip_number}/overview/refresh",
+        response_model=BipOverviewResponse,
+    )
+    async def refresh_bip_overview(
+        bip_number: int,
+        x_admin_token: Optional[str] = Header(default=None),
+    ) -> BipOverviewResponse:
+        if not x_admin_token or x_admin_token != app_config.admin_token:
+            raise HTTPException(status_code=401, detail="Invalid admin token")
+        data = await llm_request(
+            "POST",
+            "/overview/refresh",
+            {"bip_number": bip_number},
+            timeout=300.0,
+        )
+        try:
+            return BipOverviewResponse(**data)
         except Exception as exc:
             raise HTTPException(status_code=502, detail="Invalid LLM response") from exc
 

@@ -35,6 +35,18 @@ CREATE TABLE IF NOT EXISTS last_answers (
     updated_at TEXT NOT NULL,
     PRIMARY KEY (bip_number, model, prompt_version)
 );
+
+CREATE TABLE IF NOT EXISTS overview_enrichments (
+    bip_number INTEGER NOT NULL,
+    model TEXT NOT NULL,
+    prompt_version TEXT NOT NULL,
+    source_hash TEXT NOT NULL,
+    payload_json TEXT NOT NULL,
+    source_bips_json TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (bip_number, model, prompt_version, source_hash)
+);
 """
 
 

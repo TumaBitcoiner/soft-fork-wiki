@@ -77,8 +77,12 @@ npm --prefix src/frontend run dev
 ```
 
 The `src/llm-backend` service now runs alongside the main backend in the local
-launcher. It requires a repo-root `config.json` with `bips_db_path` pointing at
-the Phase 1 SQLite database and a valid `ppq_api_key`.
+launcher. It requires a repo-root `config.json` with `bips_repo_path` pointing
+at the local `bitcoin/bips` checkout, `bips_db_path` pointing at the Phase 1
+SQLite database, and `ppq_api_key` set for generation. Without a key the base
+BIP and source tabs still work, but first-view Overview generation returns a
+clear configuration error. Overview output is cached separately in
+`explain_db_path`.
 
 The `src/sentiment` directory is preserved but is not part of the Phase 1 local
 launch. Its functionality will be integrated into the unified backend

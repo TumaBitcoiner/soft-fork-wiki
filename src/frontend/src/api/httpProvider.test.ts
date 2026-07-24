@@ -19,6 +19,23 @@ describe('httpProvider', () => {
     vi.unstubAllGlobals();
   });
 
+  it('uses the idempotent Overview generation endpoint', async () => {
+    const payload = { bipNumber: 119 };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => payload,
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await httpProvider.getBipOverview(119);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:8000/api/bips/119/overview',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    vi.unstubAllGlobals();
+  });
+
   it('does not fall back to mock sentiment in HTTP mode', async () => {
     await expect(httpProvider.getSentiment(119)).rejects.toBeInstanceOf(
       ApiUnavailableError,

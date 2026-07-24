@@ -88,6 +88,10 @@ export const httpProvider: ApiProvider = {
   },
   getBip: (bipNumber) => request(`/api/bips/${bipNumber}`),
   getBipMetadata: (bipNumber) => request(`/api/bips/${bipNumber}/meta`),
+  getBipOverview: (bipNumber) => request(
+    `/api/bips/${bipNumber}/overview`,
+    { method: 'POST' },
+  ),
   async askBips(payload) {
     if (!payload.bipNumber) {
       throw new Error('Select a BIP to ask about.');

@@ -37,6 +37,41 @@ export const mockProvider: ApiProvider = {
   async getBipMetadata(bipNumber) {
     return mockProvider.getBip(bipNumber);
   },
+  async getBipOverview(bipNumber) {
+    const bip = await mockProvider.getBip(bipNumber);
+    const source = bip.citations[0];
+    const cite = (text: string) => ({
+      text,
+      basis: 'stated' as const,
+      citations: source ? [{
+        bipNumber: bip.number,
+        section: source.section,
+        excerpt: source.excerpt,
+        sourceUrl: source.url,
+      }] : [],
+    });
+    return {
+      bipNumber: bip.number,
+      plainSummary: cite(bip.plainSummary),
+      inPlainTerms: cite(bip.inPlainTerms),
+      whatItChanges: bip.whatItChanges.map(cite),
+      benefits: bip.caseFor.map(cite),
+      tradeoffs: bip.caseAgainst.map(cite),
+      openQuestions: bip.stillUnclear.map((text) => ({
+        ...cite(text),
+        basis: 'inferred' as const,
+      })),
+      relatedBips: bip.relatedBips,
+      analyzedBips: [bip.number, ...bip.relatedBips.slice(0, 5)],
+      generationStatus: 'ai-generated' as const,
+      model: 'mock-local',
+      promptVersion: 'overview-v1',
+      sourceHash: 'mock',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      cached: true,
+    };
+  },
   async askBips(payload: AskPayload) {
     await wait(700);
     const terms = payload.question.toLowerCase();

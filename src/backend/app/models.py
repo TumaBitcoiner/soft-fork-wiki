@@ -97,3 +97,35 @@ class LastAnswerResponse(BaseModel):
     prompt_version: str
     created_at: str
     updated_at: str
+
+
+class BipOverviewCitation(BaseModel):
+    bipNumber: int
+    section: str
+    excerpt: str
+    sourceUrl: str
+
+
+class BipOverviewClaim(BaseModel):
+    text: str
+    basis: Literal["stated", "inferred"]
+    citations: list[BipOverviewCitation]
+
+
+class BipOverviewResponse(BaseModel):
+    bipNumber: int
+    plainSummary: BipOverviewClaim
+    inPlainTerms: BipOverviewClaim
+    whatItChanges: list[BipOverviewClaim]
+    benefits: list[BipOverviewClaim]
+    tradeoffs: list[BipOverviewClaim]
+    openQuestions: list[BipOverviewClaim]
+    relatedBips: list[int]
+    analyzedBips: list[int]
+    generationStatus: Literal["ai-generated"]
+    model: str
+    promptVersion: str
+    sourceHash: str
+    createdAt: str
+    updatedAt: str
+    cached: bool

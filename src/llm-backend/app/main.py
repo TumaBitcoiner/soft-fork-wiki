@@ -1,17 +1,30 @@
 import hashlib
+import json
 import logging
 from datetime import datetime, timezone
-from typing import Generator
+from typing import AsyncGenerator
 
+import httpx
 from fastapi import Depends, FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
-from . import db, llm, repo
-from .config import load_config
+from . import db, llm, overview, repo
+from .config import LlmConfig, load_config
 
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
 logger = logging.getLogger("soft_fork_bips_llm")
+OVERVIEW_PROMPT_VERSION = "overview-v2"
+
+
+def validation_error_summary(error: Exception) -> str:
+    if isinstance(error, ValidationError):
+        return "; ".join(
+            ".".join(str(part) for part in item["loc"]) + f": {item['type']}"
+            for item in error.errors(include_input=False)
+        )
+    return str(error)
+
 
 class ExplainRequest(BaseModel):
     bip_number: int
@@ -20,6 +33,10 @@ class ExplainRequest(BaseModel):
 class AskRequest(BaseModel):
     bip_number: int
     question: str
+
+
+class OverviewRequest(BaseModel):
+    bip_number: int
 
 
 def normalize_question(question: str) -> str:
@@ -31,21 +48,230 @@ def question_hash(question: str) -> str:
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
-def init_app() -> FastAPI:
+def init_app(config_override: LlmConfig | None = None) -> FastAPI:
     app = FastAPI(title="Soft Fork BIPs LLM API")
-    config = load_config()
+    config = config_override or load_config()
     explain_db_path = config.explain_db_path
     connection = db.connect(explain_db_path)
     db.init_db(connection)
     connection.close()
     logger.info("LLM cache DB at %s", explain_db_path)
 
-    def db_dependency() -> Generator:
+    async def db_dependency() -> AsyncGenerator:
         connection = db.connect(explain_db_path)
         try:
             yield connection
         finally:
             connection.close()
+
+    def get_bundle(bip_number: int) -> overview.SourceBundle:
+        try:
+            return overview.build_source_bundle(
+                config.bips_repo_path,
+                bip_number,
+            )
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    def cached_overview(
+        connection,
+        bundle: overview.SourceBundle,
+    ) -> overview.OverviewResponse | None:
+        row = connection.execute(
+            """
+            SELECT payload_json, created_at, updated_at
+            FROM overview_enrichments
+            WHERE bip_number = ? AND model = ? AND prompt_version = ?
+              AND source_hash = ?
+            """,
+            (
+                bundle.target_bip,
+                config.ppq_model,
+                OVERVIEW_PROMPT_VERSION,
+                bundle.source_hash,
+            ),
+        ).fetchone()
+        if not row:
+            return None
+        payload = json.loads(row["payload_json"])
+        return overview.OverviewResponse(
+            **payload,
+            model=config.ppq_model,
+            promptVersion=OVERVIEW_PROMPT_VERSION,
+            sourceHash=bundle.source_hash,
+            createdAt=row["created_at"],
+            updatedAt=row["updated_at"],
+            cached=True,
+        )
+
+    async def generate_overview(
+        connection,
+        bundle: overview.SourceBundle,
+    ) -> overview.OverviewResponse:
+        source_text = bundle.prompt_text()
+        raw = await llm.request_overview(
+            source_text,
+            bundle.target_bip,
+            config.ppq_model,
+            config.ppq_api_key,
+        )
+        try:
+            draft = overview.OverviewDraft.model_validate(
+                overview.parse_json_object(raw)
+            )
+            overview.validate_overview(draft, bundle)
+        except (ValueError, json.JSONDecodeError) as first_error:
+            logger.warning(
+                "Overview %s initial validation failed: %s",
+                bundle.target_bip,
+                validation_error_summary(first_error),
+            )
+            repaired = await llm.request_overview_repair(
+                source_text,
+                bundle.target_bip,
+                raw,
+                str(first_error),
+                config.ppq_model,
+                config.ppq_api_key,
+            )
+            try:
+                draft = overview.OverviewDraft.model_validate(
+                    overview.parse_json_object(repaired)
+                )
+                overview.validate_overview(draft, bundle)
+            except (ValueError, json.JSONDecodeError) as repair_error:
+                logger.warning(
+                    "Overview %s repair validation failed: %s",
+                    bundle.target_bip,
+                    validation_error_summary(repair_error),
+                )
+                raise HTTPException(
+                    status_code=502,
+                    detail=(
+                        "Overview validation failed: "
+                        f"{validation_error_summary(repair_error)}"
+                    ),
+                ) from repair_error
+
+        verifier_raw = await llm.request_overview_verification(
+            source_text,
+            draft.model_dump_json(),
+            bundle.target_bip,
+            config.ppq_model,
+            config.ppq_api_key,
+        )
+        try:
+            verification = overview.VerificationDraft.model_validate(
+                overview.parse_json_object(verifier_raw)
+            )
+            verified_draft = overview.apply_verification(draft, verification)
+            payload = overview.validate_overview(verified_draft, bundle)
+        except (ValueError, json.JSONDecodeError) as exc:
+            logger.warning(
+                "Overview %s verification failed: %s",
+                bundle.target_bip,
+                validation_error_summary(exc),
+            )
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    "Overview verification failed: "
+                    f"{validation_error_summary(exc)}"
+                ),
+            ) from exc
+
+        payload.update(
+            {
+                "bipNumber": bundle.target_bip,
+                "relatedBips": bundle.related_bips,
+                "analyzedBips": bundle.analyzed_bips,
+                "generationStatus": "ai-generated",
+            }
+        )
+        timestamp = datetime.now(timezone.utc).isoformat()
+        connection.execute(
+            """
+            INSERT INTO overview_enrichments (
+                bip_number, model, prompt_version, source_hash, payload_json,
+                source_bips_json, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(bip_number, model, prompt_version, source_hash)
+            DO UPDATE SET
+                payload_json=excluded.payload_json,
+                source_bips_json=excluded.source_bips_json,
+                updated_at=excluded.updated_at
+            """,
+            (
+                bundle.target_bip,
+                config.ppq_model,
+                OVERVIEW_PROMPT_VERSION,
+                bundle.source_hash,
+                json.dumps(payload),
+                json.dumps(bundle.analyzed_bips),
+                timestamp,
+                timestamp,
+            ),
+        )
+        connection.commit()
+        row = connection.execute(
+            """
+            SELECT created_at, updated_at
+            FROM overview_enrichments
+            WHERE bip_number = ? AND model = ? AND prompt_version = ?
+              AND source_hash = ?
+            """,
+            (
+                bundle.target_bip,
+                config.ppq_model,
+                OVERVIEW_PROMPT_VERSION,
+                bundle.source_hash,
+            ),
+        ).fetchone()
+        return overview.OverviewResponse(
+            **payload,
+            model=config.ppq_model,
+            promptVersion=OVERVIEW_PROMPT_VERSION,
+            sourceHash=bundle.source_hash,
+            createdAt=row["created_at"],
+            updatedAt=row["updated_at"],
+            cached=False,
+        )
+
+    async def run_overview(
+        connection,
+        bip_number: int,
+        force: bool = False,
+    ) -> overview.OverviewResponse:
+        bundle = get_bundle(bip_number)
+        if not force:
+            cached = cached_overview(connection, bundle)
+            if cached:
+                return cached
+        if not config.ppq_api_key or config.ppq_api_key == "API-KEY-HERE":
+            raise HTTPException(
+                status_code=503,
+                detail="LLM API key is not configured",
+            )
+        try:
+            return await generate_overview(connection, bundle)
+        except httpx.TimeoutException as exc:
+            raise HTTPException(
+                status_code=504,
+                detail="Overview generation timed out",
+            ) from exc
+        except httpx.HTTPStatusError as exc:
+            status = 401 if exc.response.status_code == 401 else 502
+            detail = (
+                "LLM API key was rejected"
+                if status == 401
+                else "LLM provider rejected Overview generation"
+            )
+            raise HTTPException(status_code=status, detail=detail) from exc
+        except httpx.HTTPError as exc:
+            raise HTTPException(
+                status_code=503,
+                detail="LLM provider unavailable",
+            ) from exc
 
     @app.post("/explain")
     def explain(
@@ -266,6 +492,34 @@ def init_app() -> FastAPI:
             "created_at": row[2],
             "updated_at": row[3],
         }
+
+    @app.get(
+        "/overview/{bip_number}",
+        response_model=overview.OverviewResponse,
+    )
+    async def get_overview(
+        bip_number: int,
+        connection=Depends(db_dependency),
+    ) -> overview.OverviewResponse:
+        bundle = get_bundle(bip_number)
+        cached = cached_overview(connection, bundle)
+        if not cached:
+            raise HTTPException(status_code=404, detail="Overview not generated")
+        return cached
+
+    @app.post("/overview", response_model=overview.OverviewResponse)
+    async def create_overview(
+        payload: OverviewRequest,
+        connection=Depends(db_dependency),
+    ) -> overview.OverviewResponse:
+        return await run_overview(connection, payload.bip_number)
+
+    @app.post("/overview/refresh", response_model=overview.OverviewResponse)
+    async def refresh_overview(
+        payload: OverviewRequest,
+        connection=Depends(db_dependency),
+    ) -> overview.OverviewResponse:
+        return await run_overview(connection, payload.bip_number, force=True)
 
     return app
 

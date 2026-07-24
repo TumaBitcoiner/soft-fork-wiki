@@ -10,4 +10,5 @@ fi
 
 cd "${repo_root}"
 "${repo_root}/.venv/bin/pytest" src/backend/tests
+"${repo_root}/.venv/bin/pytest" src/llm-backend/tests
 npm --prefix src/frontend test

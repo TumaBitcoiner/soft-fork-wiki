@@ -18,13 +18,18 @@ import {
   Users,
   Zap,
 } from 'lucide-react';
-import { apiClient, type AskMode, type SentimentChoice } from '@/api/apiClient';
+import {
+  apiClient,
+  type AskMode,
+  type BipOverview,
+  type SentimentChoice,
+  type SourcedClaim,
+} from '@/api/apiClient';
 import {
   AppShell,
   AskAnswerCard,
   BipCard,
   BipMetadataPanel,
-  BothSides,
   DifficultyChip,
   EmptyState,
   ErrorState,
@@ -353,10 +358,146 @@ export function AskPage() {
 // BIP / Proposal Detail
 // ---------------------------------------------------------------------------
 
+const unsupportedOverviewClaim = 'No supported claim found in the analyzed BIP material.';
+
+function ClaimCitations({ claim }: { claim: SourcedClaim }) {
+  return (
+    <>
+      {claim.basis === 'inferred' && (
+        <span className="ml-2 inline-flex rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 align-middle text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+          Inferred
+        </span>
+      )}
+      <span className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[#6B7280]">
+        {claim.citations.map((citation, index) => (
+          <a
+            key={`${citation.bipNumber}-${citation.section}-${index}`}
+            href={citation.sourceUrl}
+            target="_blank"
+            rel="noreferrer"
+            title={citation.excerpt}
+            className="font-medium text-[#007C96] underline decoration-[#8BD7E7] underline-offset-2 hover:text-[#075985]"
+          >
+            BIP {citation.bipNumber} · {citation.section}
+          </a>
+        ))}
+      </span>
+    </>
+  );
+}
+
+function ClaimList({ claims }: { claims: SourcedClaim[] }) {
+  if (claims.length === 0) {
+    return <p className="mt-3 text-sm leading-6 text-[#6B7280]">{unsupportedOverviewClaim}</p>;
+  }
+  return (
+    <ul className="mt-3 space-y-4 text-sm leading-6">
+      {claims.map((claim, index) => (
+        <li key={`${claim.text}-${index}`} className="flex gap-2">
+          <span className="mt-2.5 size-1.5 shrink-0 rounded-full bg-current opacity-60" />
+          <span>
+            {claim.text}
+            <ClaimCitations claim={claim} />
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function OverviewSkeleton() {
+  return (
+    <div aria-label="Generating BIP Overview" className="space-y-8">
+      {[160, 130, 240].map((height) => (
+        <div key={height} className="animate-pulse rounded-xl border bg-white p-6">
+          <div className="h-7 w-48 rounded bg-[#E5E7EB]" />
+          <div className="mt-5 space-y-3">
+            <div className="h-4 w-full rounded bg-[#EEF0F3]" />
+            <div className="h-4 w-5/6 rounded bg-[#EEF0F3]" />
+            <div className="h-4 w-2/3 rounded bg-[#EEF0F3]" />
+          </div>
+          <div style={{ height: Math.max(0, height - 120) }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function OverviewContent({ overview }: { overview: BipOverview }) {
+  const generated = new Date(overview.updatedAt);
+  const generatedLabel = Number.isNaN(generated.getTime())
+    ? overview.updatedAt
+    : generated.toLocaleString();
+  return (
+    <div className="space-y-8">
+      <div className="flex flex-wrap items-center gap-2 text-xs text-[#6B7280]">
+        <span className="rounded-full border border-[#8BD7E7] bg-[#ECFAFD] px-2.5 py-1 font-semibold text-[#075985]">
+          AI-generated from BIP sources
+        </span>
+        <span>{overview.model}</span>
+        <span aria-hidden="true">·</span>
+        <time dateTime={overview.updatedAt}>{generatedLabel}</time>
+        {overview.cached && <span>· cached</span>}
+      </div>
+
+      <section className="rounded-xl border border-[#BCE3C7] bg-[#F3FBF4] p-6">
+        <h2 className="flex items-center gap-2 text-2xl font-semibold text-[#166534]"><Sparkles className="size-5" /> In Plain Terms</h2>
+        <p className="editorial-copy mt-4 text-lg leading-8 text-[#1F3B2C]">
+          {overview.inPlainTerms.text}
+        </p>
+        <div className="mt-2"><ClaimCitations claim={overview.inPlainTerms} /></div>
+      </section>
+
+      <section className="rounded-xl border border-[#D8D2C4] bg-white p-6">
+        <h2 className="text-2xl font-semibold">What It Actually Changes</h2>
+        <ClaimList claims={overview.whatItChanges} />
+      </section>
+
+      <section className="rounded-xl border border-[#D8D2C4] bg-white p-6">
+        <div className="grid gap-5 md:grid-cols-3">
+          <div className="rounded-lg border border-[#BCE3C7] bg-[#F3FBF4] p-4 text-[#1F3B2C]">
+            <h3 className="text-sm font-semibold text-[#166534]">Claimed benefits</h3>
+            <ClaimList claims={overview.benefits} />
+          </div>
+          <div className="rounded-lg border border-[#F5C6C6] bg-[#FDF3F3] p-4 text-[#3B1F1F]">
+            <h3 className="text-sm font-semibold text-[#991B1B]">Tradeoffs and risks</h3>
+            <ClaimList claims={overview.tradeoffs} />
+          </div>
+          <div className="rounded-lg border border-[#D8D2C4] bg-[#FAF7EF] p-4 text-[#3A382F]">
+            <h3 className="text-sm font-semibold text-[#57544B]">Open questions</h3>
+            <ClaimList claims={overview.openQuestions} />
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-xl font-semibold">Related BIPs</h2>
+        {overview.relatedBips.length === 0 ? (
+          <p className="mt-3 text-sm text-[#6B7280]">{unsupportedOverviewClaim}</p>
+        ) : (
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            {overview.relatedBips.map((related) => (
+              <Link key={related} to={`/bips/${related}`} className="rounded-lg border bg-white p-4 font-mono font-semibold text-[#00A7CC] hover:border-[#00A7CC]">
+                BIP {related} <ArrowRight className="float-right size-4" />
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
 export function BipDetailPage() {
   const { bipNumber } = useParams();
   const number = Number(bipNumber);
   const query = useQuery({ queryKey: ['bip', number], queryFn: () => apiClient.getBip(number), retry: false });
+  const overview = useQuery({
+    queryKey: ['bip-overview', number],
+    queryFn: () => apiClient.getBipOverview(number),
+    enabled: Number.isInteger(number) && number >= 0,
+    retry: false,
+  });
   const sentiment = useQuery({ queryKey: ['sentiment', number], queryFn: () => apiClient.getSentiment(number) });
 
   if (query.isLoading) {
@@ -379,11 +520,18 @@ export function BipDetailPage() {
           <span className="text-sm text-[#6B7280]">{bip.layer} · {bip.topic}</span>
         </div>
         <h1 className="mt-5 max-w-4xl text-4xl font-semibold tracking-[-0.04em] sm:text-6xl">{bip.title}</h1>
-        {bip.plainSummary ? (
-          <p className="mt-6 flex items-start gap-2 max-w-3xl text-xl leading-8 text-[#4B5563]">
-            <Sparkles className="mt-1.5 size-5 shrink-0 text-[#00A7CC]" />
-            {bip.plainSummary}
-          </p>
+        {overview.data?.plainSummary.text || bip.plainSummary ? (
+          <div className="mt-6 max-w-3xl">
+            <p className="flex items-start gap-2 text-xl leading-8 text-[#4B5563]">
+              <Sparkles className="mt-1.5 size-5 shrink-0 text-[#00A7CC]" />
+              {overview.data?.plainSummary.text || bip.plainSummary}
+            </p>
+            {overview.data && (
+              <div className="ml-7 mt-1">
+                <ClaimCitations claim={overview.data.plainSummary} />
+              </div>
+            )}
+          </div>
         ) : (
           <p className="mt-6 max-w-3xl text-base leading-7 text-[#6B7280]">
             Plain-language enrichment has not been generated yet. The complete
@@ -408,37 +556,20 @@ export function BipDetailPage() {
 
           <TabsContent value="overview" className="pt-8">
             <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
-              <div className="space-y-8">
-                <section className="rounded-xl border border-[#BCE3C7] bg-[#F3FBF4] p-6">
-                  <h2 className="flex items-center gap-2 text-2xl font-semibold text-[#166534]"><Sparkles className="size-5" /> In Plain Terms</h2>
-                  <p className="editorial-copy mt-4 text-lg leading-8 text-[#1F3B2C]">{bip.inPlainTerms}</p>
-                </section>
-
-                <section className="rounded-xl border border-[#D8D2C4] bg-white p-6">
-                  <h2 className="text-2xl font-semibold">What It Actually Changes</h2>
-                  <ul className="mt-4 space-y-2 text-base leading-7 text-[#4B5563]">
-                    {bip.whatItChanges.map((point) => (
-                      <li key={point} className="flex gap-2">
-                        <span className="mt-2.5 size-1.5 shrink-0 rounded-full bg-[#9A4F00]" />
-                        {point}
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-
-                <BothSides bip={bip} />
-
-                <section>
-                  <h2 className="text-xl font-semibold">Related BIPs</h2>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                    {bip.relatedBips.map((related) => (
-                      <Link key={related} to={`/bips/${related}`} className="rounded-lg border bg-white p-4 font-mono font-semibold text-[#00A7CC] hover:border-[#00A7CC]">
-                        BIP {related} <ArrowRight className="float-right size-4" />
-                      </Link>
-                    ))}
-                  </div>
-                </section>
-              </div>
+              {overview.isLoading ? (
+                <OverviewSkeleton />
+              ) : overview.isError ? (
+                <div>
+                  <ErrorState onRetry={() => overview.refetch()} />
+                  <p className="mt-3 text-center text-sm text-[#6B7280]">
+                    The original BIP remains available in the “What the BIP Says” tab.
+                  </p>
+                </div>
+              ) : overview.data ? (
+                <OverviewContent overview={overview.data} />
+              ) : (
+                <EmptyState title="Overview unavailable" body={unsupportedOverviewClaim} />
+              )}
               <BipMetadataPanel bip={bip} />
             </div>
           </TabsContent>

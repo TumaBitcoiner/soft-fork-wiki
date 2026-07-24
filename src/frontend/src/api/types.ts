@@ -61,6 +61,38 @@ export interface Bip {
   generationStatus: 'missing' | 'ai-generated' | 'reviewed';
 }
 
+export interface BipOverviewCitation {
+  bipNumber: number;
+  section: string;
+  excerpt: string;
+  sourceUrl: string;
+}
+
+export interface SourcedClaim {
+  text: string;
+  basis: 'stated' | 'inferred';
+  citations: BipOverviewCitation[];
+}
+
+export interface BipOverview {
+  bipNumber: number;
+  plainSummary: SourcedClaim;
+  inPlainTerms: SourcedClaim;
+  whatItChanges: SourcedClaim[];
+  benefits: SourcedClaim[];
+  tradeoffs: SourcedClaim[];
+  openQuestions: SourcedClaim[];
+  relatedBips: number[];
+  analyzedBips: number[];
+  generationStatus: 'ai-generated';
+  model: string;
+  promptVersion: string;
+  sourceHash: string;
+  createdAt: string;
+  updatedAt: string;
+  cached: boolean;
+}
+
 export interface ListBipsParams {
   search?: string;
   status?: string;
@@ -141,6 +173,7 @@ export interface ApiProvider {
   listBipMetadata(params?: ListBipsParams): Promise<Bip[]>;
   getBip(bipNumber: number): Promise<Bip>;
   getBipMetadata(bipNumber: number): Promise<Bip>;
+  getBipOverview(bipNumber: number): Promise<BipOverview>;
   askBips(payload: AskPayload): Promise<AskAnswer>;
   askBipChat(payload: AskPayload): Promise<AskAnswer>;
   askBipExplain(payload: AskPayload): Promise<AskAnswer>;

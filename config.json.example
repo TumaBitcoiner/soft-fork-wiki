@@ -1,9 +1,9 @@
 {
-  "bips_repo_path": "./bips-master",
-  "bips_db_path": "./bips.sqlite",
+  "bips_repo_path": "./data/bitcoin-bips",
+  "bips_db_path": "./data/app.sqlite",
   "ppq_api_key": "API-KEY-HERE",
   "ppq_model": "gemini-3-flash-preview",
   "prompt_version": "v1",
   "summary_words": 250,
-  "explain_db_path": "./bips_explain.sqlite"
+  "explain_db_path": "./data/bips_explain.sqlite"
 }

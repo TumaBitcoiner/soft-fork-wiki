@@ -48,6 +48,46 @@ def _app(tmp_path: Path):
 
 class _MockLLMTransport(httpx.AsyncBaseTransport):
     async def handle_async_request(self, request: Request) -> Response:
+        if "overview" in request.url.path:
+            return Response(
+                200,
+                json={
+                    "bipNumber": 119,
+                    "plainSummary": {
+                        "text": "A concise sourced summary.",
+                        "basis": "stated",
+                        "citations": [{
+                            "bipNumber": 119,
+                            "section": "Abstract",
+                            "excerpt": "Local test content.",
+                            "sourceUrl": "https://example.test/bip-0119.mediawiki",
+                        }],
+                    },
+                    "inPlainTerms": {
+                        "text": "A longer sourced explanation.",
+                        "basis": "stated",
+                        "citations": [{
+                            "bipNumber": 119,
+                            "section": "Abstract",
+                            "excerpt": "Local test content.",
+                            "sourceUrl": "https://example.test/bip-0119.mediawiki",
+                        }],
+                    },
+                    "whatItChanges": [],
+                    "benefits": [],
+                    "tradeoffs": [],
+                    "openQuestions": [],
+                    "relatedBips": [],
+                    "analyzedBips": [119],
+                    "generationStatus": "ai-generated",
+                    "model": "test-model",
+                    "promptVersion": "overview-v1",
+                    "sourceHash": "abc123",
+                    "createdAt": "2026-07-24T00:00:00Z",
+                    "updatedAt": "2026-07-24T00:00:00Z",
+                    "cached": request.method == "GET",
+                },
+            )
         if "last-answer" in request.url.path:
             return Response(
                 200,
@@ -176,3 +216,38 @@ async def test_last_answer_proxy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 
     assert response.status_code == 200
     assert response.json()["answer"] == "Latest cached answer."
+
+
+@pytest.mark.anyio
+async def test_overview_read_generate_and_admin_refresh_proxy(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app = _app(tmp_path)
+    transport = httpx.ASGITransport(app=app)
+    original_async_client = httpx.AsyncClient
+
+    def _client_factory(*args, **kwargs):
+        return original_async_client(transport=_MockLLMTransport(), base_url="http://llm")
+
+    monkeypatch.setattr(main_module.httpx, "AsyncClient", _client_factory)
+
+    async with app.router.lifespan_context(app):
+        async with original_async_client(
+            transport=transport,
+            base_url="http://test",
+        ) as client:
+            cached = await client.get("/api/bips/119/overview")
+            generated = await client.post("/api/bips/119/overview")
+            denied = await client.post("/api/admin/bips/119/overview/refresh")
+            refreshed = await client.post(
+                "/api/admin/bips/119/overview/refresh",
+                headers={"X-Admin-Token": "test-token"},
+            )
+
+    assert cached.status_code == 200
+    assert cached.json()["cached"] is True
+    assert generated.status_code == 200
+    assert generated.json()["cached"] is False
+    assert denied.status_code == 401
+    assert refreshed.status_code == 200

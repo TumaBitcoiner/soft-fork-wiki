@@ -115,8 +115,11 @@ HTTP mode returns an explicit unavailable error for these features.
 ## LLM backend
 
 The LLM backend runs on port 8001 and is started by `npm run dev`.
-It requires a repo-root `config.json` with `bips_db_path` pointing at the Phase 1
-SQLite database and a valid `ppq_api_key`.
+It requires a repo-root `config.json` with `bips_repo_path` pointing at the
+local `bitcoin/bips` checkout, `bips_db_path` pointing at the Phase 1 SQLite
+database, and a valid `ppq_api_key`. Copy `config.json.example` as a starting
+point. The Overview flow uses only that local BIP checkout, generates on the
+first Overview visit, and caches results in `explain_db_path`.
 
 ## Tests
 
@@ -130,6 +133,7 @@ Or run each side independently:
 
 ```bash
 .venv/bin/pytest src/backend/tests
+.venv/bin/pytest src/llm-backend/tests
 npm --prefix src/frontend test
 ```
 

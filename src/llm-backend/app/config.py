@@ -8,6 +8,7 @@ CONFIG_PATH = Path("config.json")
 
 @dataclass
 class LlmConfig:
+    bips_repo_path: Path
     bips_db_path: Path
     explain_db_path: Path
     ppq_api_key: str
@@ -20,14 +21,18 @@ def load_config() -> LlmConfig:
     if not CONFIG_PATH.exists():
         raise RuntimeError("Missing config.json in repo root")
     data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+    bips_repo_path = Path(
+        data.get("bips_repo_path", "./data/bitcoin-bips")
+    ).expanduser().resolve()
     bips_db_path = Path(data.get("bips_db_path", "./bips.sqlite")).expanduser().resolve()
     explain_db_path = Path(data.get("explain_db_path", "./bips_explain.sqlite")).expanduser().resolve()
+    if not bips_repo_path.exists():
+        raise RuntimeError(f"bips_repo_path does not exist: {bips_repo_path}")
     if not bips_db_path.exists():
         raise RuntimeError(f"bips_db_path does not exist: {bips_db_path}")
     ppq_api_key = data.get("ppq_api_key", "")
-    if not ppq_api_key:
-        raise RuntimeError("ppq_api_key is required in config.json")
     return LlmConfig(
+        bips_repo_path=bips_repo_path,
         bips_db_path=bips_db_path,
         explain_db_path=explain_db_path,
         ppq_api_key=ppq_api_key,
