@@ -6,17 +6,14 @@ import {
   Check,
   ChevronRight,
   CircleDollarSign,
-  Copy,
   ExternalLink,
   FileText,
   HelpCircle,
   Menu,
-  RotateCcw,
   ScrollText,
   Search,
   ShieldCheck,
   Sparkles,
-  Terminal,
   TriangleAlert,
   X,
   Zap,
@@ -28,7 +25,6 @@ import type {
   Citation,
   CoverageTier,
   DifficultyLevel,
-  LabResult,
   SentimentChoice,
   SentimentData,
   TimelineItem,
@@ -43,7 +39,6 @@ const navItems = [
   ['Explore Proposals', '/explore'],
   ['Consensus Timeline', '/timeline'],
   ['Ask Anything', '/ask'],
-  ['Test Lab', '/lab'],
   ['Where People Stand', '/sentiment'],
   ['How We Stay Neutral', '/method'],
 ];
@@ -495,82 +490,6 @@ export function BothSides({ bip }: { bip: Bip }) {
         </div>
       </div>
     </section>
-  );
-}
-
-const labStatusStyle: Record<LabResult['status'], string> = {
-  passed: 'text-green-400',
-  failed: 'text-red-400',
-  simulated: 'text-[#00D1FF]',
-  error: 'text-red-400',
-};
-
-export function LabConsole({
-  result,
-  loading,
-  onReset,
-  onCopy,
-}: {
-  result?: LabResult;
-  loading: boolean;
-  onReset?: () => void;
-  onCopy?: () => void;
-}) {
-  return (
-    <div className="cyber-grid overflow-hidden rounded-lg border border-[#00D1FF]/25 bg-[#07111F] text-gray-200 shadow-[0_0_24px_rgba(0,209,255,.08)]">
-      <div className="flex items-center justify-between border-b border-[#00D1FF]/20 bg-[#0B1929]/95 px-4 py-3">
-        <span className="flex items-center gap-2 font-mono text-xs text-[#00D1FF]">
-          <Terminal className="size-4 text-[#F7931A]" />
-          JUST ASK BIPs / TEST LAB
-        </span>
-        <div className="flex items-center gap-2">
-          {result && (
-            <>
-              <button onClick={onCopy} className="flex items-center gap-1 rounded-sm border border-[#00D1FF]/25 px-2 py-1 font-mono text-[10px] text-[#9FE7FA] hover:border-[#00D1FF] hover:text-white">
-                <Copy className="size-3" /> Copy scenario
-              </button>
-              <button onClick={onReset} className="flex items-center gap-1 rounded-sm border border-[#00D1FF]/25 px-2 py-1 font-mono text-[10px] text-[#9FE7FA] hover:border-[#00D1FF] hover:text-white">
-                <RotateCcw className="size-3" /> Reset
-              </button>
-            </>
-          )}
-          <span className="size-2 rounded-full bg-[#00D1FF] shadow-[0_0_10px_#00D1FF]" />
-        </div>
-      </div>
-      <div className="min-h-72 p-5 font-mono text-sm leading-7">
-        {loading ? (
-          <>
-            <p className="text-[#00D1FF]">$ making sense of it…</p>
-            <p className="animate-pulse text-gray-500">executing simulated scenario_</p>
-          </>
-        ) : result ? (
-          <>
-            <p className={labStatusStyle[result.status]}>$ {result.title}</p>
-            <p className="mt-3 text-gray-400">bip: BIP {result.bipNumber} · scenario: {result.scenarioName}</p>
-            <p className="text-gray-400">inputs: {result.inputs}</p>
-            <p className="text-gray-400">expected behavior: {result.expectedBehavior}</p>
-            <div className="mt-3 space-y-1">
-              {result.logs.map((log) => <p key={log} className="text-gray-500">{log}</p>)}
-            </div>
-            <p className="mt-4 text-white">simulated result: {result.output}</p>
-            <p className="mt-4 border-t border-white/10 pt-4 font-sans text-sm leading-6 text-gray-300">{result.explanation}</p>
-            <div className="mt-4 border-t border-white/10 pt-4">
-              <button
-                onClick={onCopy}
-                className="inline-flex items-center gap-1.5 rounded-sm border border-[#00D1FF]/30 bg-[#0B1929] px-2.5 py-1.5 font-mono text-[11px] text-[#9FE7FA] hover:border-[#00D1FF]"
-              >
-                <FileText className="size-3.5" /> {result.citation.label} · {result.citation.section}
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <p className="text-[#00D1FF]">$ ready</p>
-            <p className="text-gray-500">Select a proposal and run a scenario to inspect each simulated step.</p>
-          </>
-        )}
-      </div>
-    </div>
   );
 }
 

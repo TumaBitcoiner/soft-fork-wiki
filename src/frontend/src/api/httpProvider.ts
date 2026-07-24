@@ -1,5 +1,4 @@
 import type { ApiProvider, ListBipsParams } from './types';
-import { simulationProvider } from './simulationProvider';
 
 const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
 
@@ -169,5 +168,4 @@ export const httpProvider: ApiProvider = {
   getTimeline: unavailable('Timeline'),
   getSentiment: unavailable('Sentiment'),
   submitSentiment: unavailable('Sentiment submission'),
-  runLabScenario: simulationProvider.runLabScenario,
 };

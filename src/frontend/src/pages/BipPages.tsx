@@ -6,14 +6,12 @@ import {
   ArrowRight,
   BookOpen,
   CheckCircle2,
-  FlaskConical,
   Grid2X2,
   HelpCircle,
   Info,
   Layers3,
   List,
   MessageSquareText,
-  Play,
   Send,
   Sparkles,
   SlidersHorizontal,
@@ -30,7 +28,6 @@ import {
   DifficultyChip,
   EmptyState,
   ErrorState,
-  LabConsole,
   NpubLoginButton,
   PageHeader,
   SentimentMeter,
@@ -399,9 +396,6 @@ export function BipDetailPage() {
               <MessageSquareText /> Ask about this
             </Link>
           </Button>
-          <Button asChild variant="outline">
-            <Link to={`/lab?bip=${bip.number}`}><FlaskConical /> Open in Test Lab</Link>
-          </Button>
         </div>
 
         <Tabs defaultValue="overview" className="mt-12">
@@ -410,7 +404,6 @@ export function BipDetailPage() {
             <TabsTrigger value="source">What the BIP Says</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
             <TabsTrigger value="sentiment">Where People Stand</TabsTrigger>
-            <TabsTrigger value="lab">Test Lab</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="pt-8">
@@ -509,119 +502,7 @@ export function BipDetailPage() {
             )}
           </TabsContent>
 
-          <TabsContent value="lab" className="pt-8">
-            <div className="rounded-xl border bg-white p-6">
-              <h2 className="text-xl font-semibold">Test it in the Lab</h2>
-              <p className="mt-2 text-[#6B7280]">Run a deterministic educational scenario. Lab results are simulations, not node validation.</p>
-              <Button asChild className="mt-5">
-                <Link to={`/lab?bip=${bip.number}`}><Play /> Open Test Lab</Link>
-              </Button>
-            </div>
-          </TabsContent>
         </Tabs>
-      </main>
-    </AppShell>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Test Lab
-// ---------------------------------------------------------------------------
-
-export function LabPage() {
-  const [params] = useSearchParams();
-  const initial = [347, 119].includes(Number(params.get('bip'))) ? Number(params.get('bip')) : 347;
-  const [bipNumber, setBipNumber] = useState(initial);
-  const [scenario, setScenario] = useState('success');
-  const defaultInput = (bip: number) => (bip === 347 ? '0x6a757374 + 0x61736b' : 'template_hash: 9f2c…a701');
-  const [input, setInput] = useState(defaultInput(initial));
-  const mutation = useMutation({ mutationFn: apiClient.runLabScenario });
-
-  const changeBip = (value: string) => {
-    const next = Number(value);
-    setBipNumber(next);
-    setInput(defaultInput(next));
-    mutation.reset();
-  };
-
-  const resetScenario = () => {
-    setInput(defaultInput(bipNumber));
-    setScenario('success');
-    mutation.reset();
-  };
-
-  const copyScenario = () => {
-    if (mutation.data) {
-      const text = [
-        `BIP ${mutation.data.bipNumber}`,
-        `Scenario: ${mutation.data.scenarioName}`,
-        `Inputs: ${mutation.data.inputs}`,
-        `Result: ${mutation.data.status}`,
-      ].join('\n');
-      navigator.clipboard?.writeText(text).catch(() => {});
-    }
-  };
-
-  return (
-    <AppShell>
-      <Seo title="Test Lab" description="For technical users who want to test proposal behavior. Demo scenarios are simulated until the backend test environment is connected." />
-      <main className={`${wrap} relative`}>
-        <PageHeader
-          eyebrow="Simulated environment"
-          title="Test Lab"
-          description="For technical users who want to test proposal behavior. Demo scenarios are simulated until the backend test environment is connected."
-          action={<span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800">Simulated result</span>}
-        />
-
-        <div className="mt-6 flex items-start gap-2 rounded-lg border border-[#D8D2C4] bg-[#FFFDF7] p-4 text-sm leading-6 text-[#374151]">
-          <Info className="mt-0.5 size-4 shrink-0" />
-          <span>The test backend is not connected yet. This simulated scenario shows the intended flow.</span>
-        </div>
-
-        <div className="cyber-grid mt-6 grid gap-8 rounded-xl border border-[#00D1FF]/20 p-4 shadow-[0_0_30px_rgba(0,209,255,.06)] sm:p-6 lg:grid-cols-[360px_1fr]">
-          <div className="space-y-5 rounded-lg border border-[#00D1FF]/20 bg-[#0B1929] p-5 text-[#F6F1E7]">
-            <div>
-              <label className="text-sm font-semibold">Selected BIP</label>
-              <Select value={String(bipNumber)} onValueChange={changeBip}>
-                <SelectTrigger className="mt-2 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="347">BIP 347 · OP_CAT</SelectItem>
-                  <SelectItem value="119">BIP 119 · CTV</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-semibold">Scenario</label>
-              <Select value={scenario} onValueChange={setScenario}>
-                <SelectTrigger className="mt-2 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="success">Valid spend path</SelectItem>
-                  <SelectItem value="failure">Expected failure</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label htmlFor="lab-input" className="text-sm font-semibold">Inputs</label>
-              <Textarea id="lab-input" value={input} onChange={(e) => setInput(e.target.value)} className="mt-2 min-h-28 font-mono text-xs" />
-            </div>
-            <div className="rounded-lg border border-[#00D1FF]/15 bg-[#07111F] p-4 text-sm leading-6 text-[#CDD6E0]">
-              <strong>Expected behavior:</strong> {bipNumber === 347 ? 'Concatenate the top two stack elements, then compare the result.' : 'Commit to selected transaction template fields and verify the hash.'}
-            </div>
-            <div className="flex gap-2">
-              <Button className="flex-1" disabled={mutation.isPending} onClick={() => mutation.mutate({ bipNumber, scenarioId: scenario, input })}>
-                <Play /> {mutation.isPending ? 'Running…' : 'Run scenario'}
-              </Button>
-              <Button variant="outline" className="border-[#00D1FF]/30 bg-transparent text-[#9FE7FA] hover:bg-[#00D1FF]/10" onClick={resetScenario}>
-                Reset
-              </Button>
-            </div>
-          </div>
-          <LabConsole result={mutation.data} loading={mutation.isPending} onReset={resetScenario} onCopy={copyScenario} />
-        </div>
       </main>
     </AppShell>
   );
@@ -784,7 +665,7 @@ export function MethodPage() {
           <p className="font-mono text-xs uppercase tracking-widest text-[#F7931A]">Integration status</p>
           <h2 className="mt-3 text-2xl font-semibold">Frontend demo now. FastAPI next.</h2>
           <p className="mt-4 max-w-3xl leading-7 text-gray-300">
-            The current build uses believable local mock responses. Future endpoints will provide indexed BIP records, retrieval-grounded answers, timeline data, lab execution, and sentiment persistence. No UI component calls GitHub, AI providers, Nostr, payment services, or test systems directly.
+            The current build uses believable local mock responses. Future endpoints will provide indexed BIP records, retrieval-grounded answers, timeline data, and sentiment persistence. No UI component calls GitHub, AI providers, Nostr, or payment services directly.
           </p>
         </section>
       </main>

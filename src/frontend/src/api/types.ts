@@ -14,7 +14,6 @@ export type AskMode = 'Simple' | 'Balanced' | 'Technical';
 export type SentimentChoice = 'Against' | 'Neutral' | 'For';
 export type DifficultyLevel = 'Beginner' | 'Intermediate' | 'Advanced';
 export type CoverageTier = 'Strong' | 'Partial' | 'Weak';
-export type LabStatus = 'passed' | 'failed' | 'simulated' | 'error';
 
 export interface Citation {
   id: string;
@@ -137,25 +136,6 @@ export interface SubmitSentimentPayload {
   npub: string;
 }
 
-export interface LabScenarioPayload {
-  bipNumber: number;
-  scenarioId: string;
-  input: string;
-}
-
-export interface LabResult {
-  status: LabStatus;
-  scenarioName: string;
-  bipNumber: number;
-  inputs: string;
-  expectedBehavior: string;
-  title: string;
-  explanation: string;
-  logs: string[];
-  output: string;
-  citation: Citation;
-}
-
 export interface ApiProvider {
   listBips(params?: ListBipsParams): Promise<Bip[]>;
   listBipMetadata(params?: ListBipsParams): Promise<Bip[]>;
@@ -167,5 +147,4 @@ export interface ApiProvider {
   getTimeline(params?: TimelineParams): Promise<TimelineItem[]>;
   getSentiment(bipNumber: number): Promise<SentimentData>;
   submitSentiment(payload: SubmitSentimentPayload): Promise<SentimentData>;
-  runLabScenario(payload: LabScenarioPayload): Promise<LabResult>;
 }

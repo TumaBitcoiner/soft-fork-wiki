@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useSeoMeta } from '@unhead/react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BookOpen, FlaskConical, MessageCircleQuestion, Search, ShieldCheck, Users } from 'lucide-react';
+import { ArrowRight, BookOpen, MessageCircleQuestion, Search, ShieldCheck, Users } from 'lucide-react';
 import { apiClient } from '@/api/apiClient';
 import { AppShell, BipCard, ErrorState, SearchAskBar, TimelineEvent } from '@/components/product';
 import { Button } from '@/components/ui/button';
@@ -152,11 +152,10 @@ const Index = () => {
           </div>
         </section>
 
-        <section className="mx-auto grid max-w-7xl gap-5 px-4 py-16 sm:px-6 md:grid-cols-4 lg:px-8">
+        <section className="mx-auto grid max-w-7xl gap-5 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
           {[
             [Search, 'Ask with evidence', 'Every answer exposes the BIP sections used and makes uncertainty visible.'],
             [BookOpen, 'Compare proposals', 'Browse status, topic, difficulty, and consensus history in one calm index.'],
-            [FlaskConical, 'Test the idea', 'Step through CTV and OP_CAT scenarios with transparent simulated logs.'],
             [Users, 'See where people stand', 'Community signal, clearly separated from Bitcoin consensus itself.'],
           ].map(([Icon, title, body]) => {
             const FeatureIcon = Icon as typeof Search;

@@ -1,4 +1,4 @@
-import type { ApiProvider, AskPayload, CoverageTier, LabScenarioPayload, ListBipsParams, SentimentChoice, SubmitSentimentPayload, TimelineParams } from './types';
+import type { ApiProvider, AskPayload, CoverageTier, ListBipsParams, SentimentChoice, SubmitSentimentPayload, TimelineParams } from './types';
 import { bips, sentimentByBip, timeline } from './mockData';
 
 const wait = (ms = 260) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -95,32 +95,6 @@ export const mockProvider: ApiProvider = {
         { author: `${payload.npub.slice(0, 9)}…`, choice: payload.choice, note: payload.note || 'No note added — just added a signal.', time: 'now' },
         ...current.recentNotes,
       ],
-    };
-  },
-  async runLabScenario(payload: LabScenarioPayload) {
-    await wait(900);
-    const bip = bips.find((item) => item.number === payload.bipNumber);
-    const cat = payload.bipNumber === 347;
-    const valid = payload.scenarioId !== 'failure';
-    const scenarioName = cat ? 'OP_CAT concatenation check' : 'CTV template commitment check';
-    const expectedBehavior = cat
-      ? 'Concatenate the top two stack elements and compare the result against the expected commitment.'
-      : 'Recompute the transaction template hash and verify it against the script commitment.';
-    return {
-      status: valid ? 'passed' : 'failed',
-      scenarioName,
-      bipNumber: payload.bipNumber,
-      inputs: payload.input,
-      expectedBehavior,
-      title: valid ? 'Simulated result: scenario passed' : 'Simulated result: validation failed as expected',
-      explanation: cat
-        ? 'The simulator concatenated two bounded stack elements and compared the result with the expected commitment.'
-        : 'The simulator recomputed the transaction template hash and checked it against the script commitment.',
-      logs: cat
-        ? ['[stack] push 0x6a757374', '[stack] push 0x61736b', '[op] OP_CAT → 0x6a75737461736b', `[verify] ${valid ? 'equal' : 'mismatch'}`]
-        : ['[tx] serialize template fields', '[hash] sha256(template)', '[script] OP_CHECKTEMPLATEVERIFY', `[verify] ${valid ? 'commitment matched' : 'commitment mismatch'}`],
-      output: valid ? 'TRUE (spend accepted by simulated rules)' : 'FALSE (spend rejected by simulated rules)',
-      citation: (bip ?? bips.find((item) => item.number === 347)!).citations[1],
     };
   },
 };

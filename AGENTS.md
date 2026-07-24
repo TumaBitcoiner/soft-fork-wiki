@@ -93,8 +93,7 @@ Mock data is available only when explicitly configured. Set this in
 VITE_DATA_MODE=mock
 ```
 
-Do not add mock fallbacks to HTTP mode. Test Lab remains a separate,
-clearly-labelled browser simulation.
+Do not add mock fallbacks to HTTP mode.
 
 ## Validate changes
 

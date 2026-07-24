@@ -110,8 +110,7 @@ Not implemented yet:
 - `/api/sentiment/{bip_number}` (Phase 3)
 - Nostr publishing helpers (Phase 4)
 
-HTTP mode returns an explicit unavailable error for these features. Test Lab
-continues to use a separate, clearly labelled browser simulation.
+HTTP mode returns an explicit unavailable error for these features.
 
 ## LLM backend
 
@@ -143,7 +142,6 @@ npm --prefix src/frontend test
 - Set `VITE_DATA_MODE=mock`, restart the frontend, and confirm mock mode is
   available only when explicitly selected.
 - Confirm the existing Nostr login/signer flow still opens.
-- Open Test Lab and confirm every result is labelled as simulated.
 - Request a missing BIP and confirm the backend returns HTTP 404.
 
 ## Rollback
