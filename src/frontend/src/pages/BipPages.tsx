@@ -238,7 +238,22 @@ export function AskPage() {
   const [question, setQuestion] = useState(initial);
   const [mode, setMode] = useState<AskMode>('Balanced');
   const mutation = useMutation({
-    mutationFn: origin === 'explore' ? apiClient.askBipExplain : apiClient.askBipChat,
+    mutationFn: async (payload: { question: string; mode: AskMode; bipNumber?: number }) => {
+      if (origin === 'explore') {
+        return apiClient.askBipExplain(payload);
+      }
+
+      const [chat, explain] = await Promise.all([
+        apiClient.askBipChat(payload),
+        apiClient.askBipExplain(payload),
+      ]);
+
+      return {
+        ...chat,
+        inPlainTerms: explain.inPlainTerms,
+        whatBipsSay: '',
+      };
+    },
   });
 
   useEffect(() => {
