@@ -19,7 +19,6 @@ import type {
   Bip,
   BipStatus,
   Citation,
-  CoverageTier,
   DifficultyLevel,
   SentimentChoice,
   SentimentData,
@@ -284,26 +283,15 @@ export function BipMetadataPanel({ bip }: { bip: Bip }) {
   );
 }
 
-const coverageStyle: Record<CoverageTier, string> = {
-  Strong: 'border-green-200 bg-green-50 text-green-700',
-  Partial: 'border-amber-200 bg-amber-50 text-amber-800',
-  Weak: 'border-red-200 bg-red-50 text-red-700',
-};
-
 export function AskAnswerCard({ answer }: { answer: AskAnswer }) {
-  const showCoverageWarning = answer.coverageTier !== 'Strong';
+  const hasNextSteps = answer.relatedBips.length > 0 || answer.followUps.length > 0;
   return (
     <article className="rounded-xl border border-[#D8D2C4] bg-white shadow-sm">
-      <div className="border-b border-[#EDF0F4] p-5 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="inline-flex items-center gap-2 text-sm font-semibold text-[#00A7CC]">
-            <BookOpen className="size-4" />
-            Source-grounded answer
-          </span>
-          <span className={cn('inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold', coverageStyle[answer.coverageTier])}>
-            Source coverage: {answer.coverageTier}
-          </span>
-        </div>
+      <div className={cn('p-5 sm:p-6', hasNextSteps && 'border-b border-[#EDF0F4]')}>
+        <span className="inline-flex items-center gap-2 text-sm font-semibold text-[#00A7CC]">
+          <BookOpen className="size-4" />
+          Source-grounded answer
+        </span>
         <Markdown content={answer.shortAnswer} className="mt-5 text-2xl font-semibold leading-snug" />
 
         <div className="mt-5 rounded-lg border border-[#BCE3C7] bg-[#F3FBF4] p-4">
@@ -312,17 +300,10 @@ export function AskAnswerCard({ answer }: { answer: AskAnswer }) {
           </p>
           <Markdown content={answer.inPlainTerms} className="editorial-copy mt-2 text-lg leading-8 text-[#1F3B2C]" />
         </div>
-
-        {showCoverageWarning && (
-          <div className="mt-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
-            <TriangleAlert className="mt-0.5 size-4 shrink-0" />
-            <span>This answer is only partially supported by indexed BIP source material. Review the sources before forming a final opinion.</span>
-          </div>
-        )}
       </div>
 
-      <div className="grid gap-6 p-5 sm:p-6 md:grid-cols-[1fr_220px]">
-        <div>
+      {hasNextSteps && (
+        <div className="p-5 sm:p-6">
           {answer.relatedBips.length > 0 && (
             <div>
               <h3 className="text-sm font-semibold">Related BIPs</h3>
@@ -352,22 +333,8 @@ export function AskAnswerCard({ answer }: { answer: AskAnswer }) {
               </div>
             </div>
           )}
-
-          <div className="mt-5 rounded-lg bg-amber-50 p-3 text-sm leading-6 text-amber-900">
-            <strong>Worth noting:</strong> {answer.caveat}
-          </div>
         </div>
-        <div>
-          <div className="flex justify-between text-sm">
-            <span>Coverage score</span>
-            <strong>{answer.coverage}%</strong>
-          </div>
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#E5E7EB]">
-            <div className="h-full rounded-full bg-[#00A7CC]" style={{ width: `${answer.coverage}%` }} />
-          </div>
-          <p className="mt-2 text-xs leading-5 text-[#6B7280]">Estimate of relevant source sections represented in this answer.</p>
-        </div>
-      </div>
+      )}
     </article>
   );
 }

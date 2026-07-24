@@ -343,7 +343,7 @@ export function AskPage() {
               <AskAnswerCard answer={mutation.data} />
             </>
           ) : (
-            <EmptyState title="Ask anything. Seriously." body="No question is too basic. Answers always include source citations, a coverage estimate, and visible uncertainty." />
+            <EmptyState title="Ask anything. Seriously." body="No question is too basic. Answers are grounded in the selected BIP source material." />
           )}
         </div>
       </main>
