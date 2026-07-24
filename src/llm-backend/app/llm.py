@@ -21,10 +21,35 @@ def build_messages(content: str, max_words: int) -> List[Dict[str, str]]:
     ]
 
 
+def build_qa_messages(content: str, question: str) -> List[Dict[str, str]]:
+    system_prompt = (
+        "Answer the user's question using the Bitcoin Improvement Proposal text. "
+        "Explain in plain terms, be concise, and avoid speculation."
+    )
+    user_prompt = f"Question:\n{question}\n\nBIP Content:\n{content}"
+    return [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ]
+
+
 def request_summary(content: str, model: str, max_words: int, api_key: str) -> str:
     payload = {
         "model": model,
         "messages": build_messages(content, max_words),
+        "temperature": 0.2,
+    }
+    with httpx.Client(timeout=60.0) as client:
+        response = client.post(PPQ_URL, headers=get_headers(api_key), json=payload)
+        response.raise_for_status()
+        data = response.json()
+    return data["choices"][0]["message"]["content"].strip()
+
+
+def request_answer(content: str, question: str, model: str, api_key: str) -> str:
+    payload = {
+        "model": model,
+        "messages": build_qa_messages(content, question),
         "temperature": 0.2,
     }
     with httpx.Client(timeout=60.0) as client:

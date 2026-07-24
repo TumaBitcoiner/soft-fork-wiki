@@ -43,7 +43,16 @@ uvicorn app.main:app --app-dir src/llm-backend --reload
   - Always generates a new explanation and overwrites cache for the current
     prompt version
 
+- `POST /ask`
+  - Body: `{ "bip_number": 360, "question": "..." }`
+  - Returns cached answer if present, otherwise generates and caches
+
+- `GET /last-answer/{bip_number}`
+  - Returns the most recent answer stored for the BIP and model/prompt version
+
 ## Notes
 - The ppq endpoint used is `POST https://api.ppq.ai/chat/completions`.
 - Authorization uses the `Authorization: Bearer <API_KEY>` header.
 - Explanations are stored per `(bip_number, model, prompt_version)`.
+- Answers are stored per `(bip_number, question_hash, model, prompt_version)`.
+- The last answer cache is stored per `(bip_number, model, prompt_version)`.

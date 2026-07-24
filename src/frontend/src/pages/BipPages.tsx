@@ -236,7 +236,7 @@ export function AskPage() {
   const bipNumber = Number(params.get('bip')) || undefined;
   const [question, setQuestion] = useState(initial);
   const [mode, setMode] = useState<AskMode>('Balanced');
-  const mutation = useMutation({ mutationFn: apiClient.askBips });
+  const mutation = useMutation({ mutationFn: apiClient.askBipChat });
 
   useEffect(() => {
     if (initial && !mutation.data && !mutation.isPending) mutation.mutate({ question: initial, mode, bipNumber });

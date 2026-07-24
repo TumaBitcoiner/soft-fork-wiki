@@ -87,6 +87,8 @@ GET  /api/bips/{bip_number}
 GET  /api/bips/{bip_number}/meta
 POST /api/admin/refresh-bips
 POST /api/explain
+POST /ask
+GET  /last-answer/{bip_number}
 ```
 
 Refresh the local BIP checkout and re-index changed records:

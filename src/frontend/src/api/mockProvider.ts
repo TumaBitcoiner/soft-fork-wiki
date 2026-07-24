@@ -77,6 +77,9 @@ export const mockProvider: ApiProvider = {
           : 'Source coverage is strong, but implementation history and deployment context may still reward additional primary sources.',
     };
   },
+  async askBipChat(payload: AskPayload) {
+    return mockProvider.askBips(payload);
+  },
   async getTimeline(_params: TimelineParams = {}) { await wait(120); return timeline; },
   async getSentiment(bipNumber) { await wait(120); return sentimentByBip[bipNumber] ?? sentimentByBip[119]; },
   async submitSentiment(payload: SubmitSentimentPayload) {

@@ -124,6 +124,45 @@ export const httpProvider: ApiProvider = {
       caveat: 'Generated summary without citations.',
     };
   },
+  async askBipChat(payload) {
+    if (!payload.bipNumber) {
+      throw new Error('Select a BIP to ask about.');
+    }
+    const response = await request<{
+      bip_number: number;
+      question: string;
+      answer: string;
+      model: string;
+      prompt_version: string;
+      created_at: string;
+      updated_at: string;
+      cached: boolean;
+    }>(
+      '/ask',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          bip_number: payload.bipNumber,
+          question: payload.question,
+        }),
+      },
+    );
+
+    const answer = (response.answer ?? '').trim();
+    return {
+      question: response.question || payload.question,
+      shortAnswer: answer || 'No answer returned yet.',
+      inPlainTerms: answer,
+      whatBipsSay: answer,
+      confidence: 0.5,
+      coverage: 0.5,
+      coverageTier: 'Partial',
+      citations: [],
+      relatedBips: [],
+      followUps: [],
+      caveat: 'Generated answer without citations.',
+    };
+  },
   getTimeline: unavailable('Timeline'),
   getSentiment: unavailable('Sentiment'),
   submitSentiment: unavailable('Sentiment submission'),

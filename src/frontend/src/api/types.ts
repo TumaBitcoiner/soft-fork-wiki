@@ -162,6 +162,7 @@ export interface ApiProvider {
   getBip(bipNumber: number): Promise<Bip>;
   getBipMetadata(bipNumber: number): Promise<Bip>;
   askBips(payload: AskPayload): Promise<AskAnswer>;
+  askBipChat(payload: AskPayload): Promise<AskAnswer>;
   getTimeline(params?: TimelineParams): Promise<TimelineItem[]>;
   getSentiment(bipNumber: number): Promise<SentimentData>;
   submitSentiment(payload: SubmitSentimentPayload): Promise<SentimentData>;

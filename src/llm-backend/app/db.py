@@ -12,6 +12,29 @@ CREATE TABLE IF NOT EXISTS explanations (
     updated_at TEXT NOT NULL,
     PRIMARY KEY (bip_number, model, prompt_version)
 );
+
+CREATE TABLE IF NOT EXISTS answers (
+    bip_number INTEGER NOT NULL,
+    question TEXT NOT NULL,
+    question_hash TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    model TEXT NOT NULL,
+    prompt_version TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (bip_number, question_hash, model, prompt_version)
+);
+
+CREATE TABLE IF NOT EXISTS last_answers (
+    bip_number INTEGER NOT NULL,
+    question TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    model TEXT NOT NULL,
+    prompt_version TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (bip_number, model, prompt_version)
+);
 """
 
 
