@@ -77,7 +77,7 @@ class EvidenceDraft(BaseModel):
 class ClaimDraft(BaseModel):
     text: str
     basis: Literal["stated", "inferred"]
-    evidence: list[EvidenceDraft] = Field(min_length=1, max_length=3)
+    evidence: list[EvidenceDraft] = Field(min_length=1, max_length=5)
 
 
 class OverviewDraft(BaseModel):

@@ -21,7 +21,7 @@ OVERVIEW_SCHEMA = """
   "tradeoffs": [],
   "open_questions": []
 }
-Each array contains at most three objects with the same text/basis/evidence
+Each array contains at most five objects with the same text/basis/evidence
 shape. Each array item must be one concise sentence of at most 35 words.
 """
 
