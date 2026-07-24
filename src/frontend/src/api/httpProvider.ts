@@ -2,6 +2,7 @@ import type { ApiProvider, ListBipsParams } from './types';
 import { simulationProvider } from './simulationProvider';
 
 const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
+const llmBaseUrl = (import.meta.env.VITE_LLM_BASE_URL || baseUrl).replace(/\/$/, '');
 
 export class ApiUnavailableError extends Error {
   constructor(feature: string) {
@@ -10,8 +11,8 @@ export class ApiUnavailableError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${baseUrl}${path}`, {
+async function request<T>(path: string, init?: RequestInit, base = baseUrl): Promise<T> {
+  const response = await fetch(`${base}${path}`, {
     ...init,
     headers: { 'Content-Type': 'application/json', ...init?.headers },
   });
@@ -146,6 +147,7 @@ export const httpProvider: ApiProvider = {
           question: payload.question,
         }),
       },
+      llmBaseUrl,
     );
 
     const answer = (response.answer ?? '').trim();

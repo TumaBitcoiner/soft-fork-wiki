@@ -74,6 +74,7 @@ Frontend variables:
 - `VITE_DATA_MODE=http` — use the local API. Mock mode is available only with
   the explicit value `mock`.
 - `VITE_API_BASE_URL=http://localhost:8000`
+- `VITE_LLM_BASE_URL=http://localhost:8001`
 
 ## API
 
