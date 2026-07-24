@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Is this good for Bitcoin? — system overview</title>
+<style>
+  :root{
+    --paper:#F5F1E8; --panel:#FBF8F2; --ink:#141210; --orange:#F7931A;
+    --rule:#D8D2C4; --muted:#6B6459;
+    --good:#4F7A4A; --bad:#B0473A;
+    --sans:'Inter','Archivo','Helvetica Neue',Arial,sans-serif;
+    --mono:'IBM Plex Mono','SF Mono',ui-monospace,Consolas,monospace;
+    --serif:'Newsreader',Georgia,'Times New Roman',serif;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+       -webkit-font-smoothing:antialiased;line-height:1.5}
+
+  .ticker{border-bottom:1px solid var(--ink);padding:9px 22px;font-family:var(--mono);
+          font-size:11px;letter-spacing:.16em;text-transform:uppercase;overflow:hidden;
+          white-space:nowrap;color:var(--muted)}
+  .ticker b{color:var(--orange);font-weight:600}
+
+  .wrap{max-width:1120px;margin:0 auto;padding:44px 24px 96px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+           color:var(--muted)}
+  .eyebrow .m{color:var(--orange)}
+
+  h1{font-size:clamp(40px,7.5vw,82px);font-weight:800;letter-spacing:-.035em;line-height:.92;
+     margin:12px 0 8px;text-transform:lowercase;text-wrap:balance}
+  .lede{font-family:var(--serif);font-size:20px;font-style:italic;color:var(--muted);
+        max-width:60ch;margin:0 0 8px;line-height:1.5}
+
+  h2{font-family:var(--mono);font-size:13px;letter-spacing:.2em;text-transform:uppercase;
+     font-weight:500;margin:0;color:var(--ink)}
+  .sec{margin-top:64px;padding-top:22px;border-top:1px solid var(--ink)}
+  .sec .h2sub{font-family:var(--serif);font-style:italic;color:var(--muted);font-size:16px;
+              margin:8px 0 0}
+
+  /* pipeline */
+  .pipe{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:28px;
+        border:1px solid var(--ink)}
+  .stage{padding:20px 18px;border-right:1px solid var(--rule);position:relative}
+  .stage:last-child{border-right:0}
+  .stage .n{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.14em}
+  .stage h3{font-size:18px;font-weight:800;letter-spacing:-.02em;margin:6px 0 2px}
+  .stage .tech{font-family:var(--mono);font-size:11px;color:var(--orange);letter-spacing:.06em;
+               margin-bottom:10px}
+  .stage p{font-size:13.5px;color:var(--muted);margin:0;line-height:1.5}
+  .stage .flow{position:absolute;top:50%;right:-8px;width:15px;height:15px;background:var(--paper);
+               border-right:1px solid var(--ink);border-bottom:1px solid var(--ink);
+               transform:translateY(-50%) rotate(-45deg);z-index:2}
+  .stage:last-child .flow{display:none}
+  .pill{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+        text-transform:uppercase;padding:2px 7px;border:1px solid;margin-top:12px}
+  .pill.run{color:var(--good);border-color:var(--good)}
+  .pill.wired{color:var(--orange);border-color:var(--orange)}
+
+  .ours{background:var(--panel)}
+  .ours::before{content:'our slice';position:absolute;top:8px;right:10px;font-family:var(--mono);
+                font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--orange)}
+
+  /* two-phase explainer */
+  .phases{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:26px}
+  .phase{border:1px solid var(--ink);padding:22px}
+  .phase .tag{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+              color:var(--orange)}
+  .phase h3{font-size:22px;font-weight:800;letter-spacing:-.02em;margin:8px 0 6px}
+  .phase p{font-size:14px;color:var(--muted);margin:0;line-height:1.55}
+  .phase .meta{font-family:var(--mono);font-size:11px;color:var(--ink);margin-top:14px;
+               padding-top:12px;border-top:1px dotted var(--rule);letter-spacing:.04em}
+
+  /* data table */
+  .tablewrap{overflow-x:auto;margin-top:26px;border:1px solid var(--ink)}
+  table{border-collapse:collapse;width:100%;min-width:720px;font-variant-numeric:tabular-nums}
+  thead th{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+           color:var(--muted);font-weight:500;text-align:right;padding:12px 14px;
+           border-bottom:1px solid var(--ink);white-space:nowrap}
+  thead th.l{text-align:left}
+  tbody td{padding:11px 14px;border-bottom:1px solid var(--rule);font-size:13.5px;text-align:right;
+           font-family:var(--mono)}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:hover{background:var(--panel)}
+  td.l{text-align:left}
+  .bipn{font-weight:700}
+  .bipname{color:var(--muted);font-family:var(--sans);font-size:12.5px}
+
+  /* inline lean bar: −100 … +100, centre zero */
+  .lean{display:inline-flex;align-items:center;gap:9px;justify-content:flex-end}
+  .bar{position:relative;width:104px;height:12px;border:1px solid var(--rule);flex:0 0 auto}
+  .bar .zero{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--ink)}
+  .bar .fill{position:absolute;top:0;bottom:0}
+  .bar .fill.pos{left:50%;background:var(--good)}
+  .bar .fill.neg{right:50%;background:var(--bad)}
+  .score{font-weight:700;width:42px;text-align:right;display:inline-block}
+  .score.pos{color:var(--good)} .score.neg{color:var(--bad)} .score.mid{color:var(--ink)}
+
+  .split{display:inline-flex;gap:8px;align-items:baseline;justify-content:flex-end;white-space:nowrap}
+  .split .f{color:var(--good)} .split .a{color:var(--bad)}
+  .split .dash{color:var(--muted)}
+  .nodir{color:var(--muted);font-style:normal;font-size:12px;font-family:var(--serif);
+         font-style:italic}
+
+  .note{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--muted);
+        margin-top:14px;line-height:1.55}
+
+  /* highlights */
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:26px}
+  .card{border:1px solid var(--ink);padding:22px;display:flex;flex-direction:column}
+  .card .k{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+           color:var(--muted)}
+  .card .big{font-size:46px;font-weight:800;letter-spacing:-.03em;line-height:1;margin:12px 0 4px;
+             font-variant-numeric:tabular-nums}
+  .card .big.neg{color:var(--bad)} .card .big.mid{color:var(--ink)}
+  .card .cap{font-family:var(--serif);font-size:14.5px;color:var(--muted);line-height:1.55;
+             margin-top:8px}
+  .card b{color:var(--ink);font-weight:700}
+
+  .foot{margin-top:70px;padding-top:20px;border-top:1px solid var(--ink);font-family:var(--mono);
+        font-size:11px;color:var(--muted);letter-spacing:.05em;line-height:1.9}
+
+  @media(max-width:760px){
+    .pipe,.phases,.cards{grid-template-columns:1fr}
+    .stage{border-right:0;border-bottom:1px solid var(--rule)}
+    .stage .flow{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="ticker">
+  <b>&#9654; ASSEMBLED</b> &nbsp;&bull;&nbsp; BITCOIN++ TORONTO &nbsp;&bull;&nbsp; THE GREAT HALL
+  &nbsp;&bull;&nbsp; 4 COMPONENTS, 1 REPO &nbsp;&bull;&nbsp; READ FROM NOSTR &nbsp;&bull;&nbsp; NO SIDES
+</div>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow"><span class="m">&sect;</span> SYSTEM OVERVIEW &nbsp;/ branch demo1-sentiment</div>
+    <h1>is this good for bitcoin?</h1>
+    <p class="lede">Every consensus-changing Bitcoin proposal, explained in plain terms —
+      then we show you where people actually stand. We host the debate. We never tell you
+      the answer.</p>
+  </header>
+
+  <!-- PIPELINE -->
+  <section class="sec">
+    <h2>The system &mdash; four parts, one repo</h2>
+    <p class="h2sub">A user reads a proposal, asks questions, then sees the gauge. Each part
+      runs; the two on the right are ours.</p>
+
+    <div class="pipe">
+      <div class="stage">
+        <div class="n">01 &middot; DATA</div>
+        <h3>BIPs API</h3>
+        <div class="tech">Python &middot; FastAPI &middot; SQLite</div>
+        <p>Ingests every consensus soft-fork BIP from the canonical repo and serves it.</p>
+        <div class="pill run">Running &middot; :8000</div>
+        <div class="flow"></div>
+      </div>
+      <div class="stage">
+        <div class="n">02 &middot; EXPLAIN</div>
+        <h3>Plain-language explainer</h3>
+        <div class="tech">Python &middot; LLM &middot; cached</div>
+        <p>Rewrites each dense proposal the way a smart friend would. Cached per BIP.</p>
+        <div class="pill run">Running &middot; :8001</div>
+        <div class="flow"></div>
+      </div>
+      <div class="stage ours">
+        <div class="n">03 &middot; MEASURE</div>
+        <h3>Sentiment + voting</h3>
+        <div class="tech">TypeScript &middot; Nostr &middot; Lightning</div>
+        <p>Reads posts and zaps off the relays, classifies them, ranks by sats, validates
+          every receipt.</p>
+        <div class="pill run">Running &middot; :8002</div>
+        <div class="flow"></div>
+      </div>
+      <div class="stage ours">
+        <div class="n">04 &middot; SHOW</div>
+        <h3>Frontend</h3>
+        <div class="tech">React 19 &middot; Vite &middot; Nostrify</div>
+        <p>Explorer, explanation, the gauge. Wired to the sentiment service this session.</p>
+        <div class="pill wired">Wired &middot; :5173</div>
+        <div class="flow"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TWO PHASES -->
+  <section class="sec">
+    <h2>How the gauge works &mdash; two phases</h2>
+    <p class="h2sub">One measures how much people care. The other reads what they argue.</p>
+
+    <div class="phases">
+      <div class="phase">
+        <div class="tag">Phase 1 &middot; the money</div>
+        <h3>Count the zaps</h3>
+        <p>Sum the sats people zapped onto posts about a proposal — real money, already
+          spent, straight off the relays. No AI. Every receipt is verified against the
+          recipient&rsquo;s own Lightning provider, so a forged zap can&rsquo;t buy its way up.</p>
+        <div class="meta">NO LLM &nbsp;/&nbsp; ~250MS WARM &nbsp;/&nbsp; VALIDATED RECEIPTS</div>
+      </div>
+      <div class="phase">
+        <div class="tag">Phase 2 &middot; the argument</div>
+        <h3>Read the posts</h3>
+        <p>An LLM reads every post found for a proposal, sorts each into good / not good /
+          not sure, and writes back what both camps are actually arguing. The gauge is the
+          net lean, neutrals excluded.</p>
+        <div class="meta">GEMINI FLASH &nbsp;/&nbsp; 130+ POSTS/BIP &nbsp;/&nbsp; NARRATIVE + QUOTES</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DATA -->
+  <section class="sec">
+    <h2>The data &mdash; 13 proposals, measured</h2>
+    <p class="h2sub">Every number below was read from live Nostr. Phase 2 is the LLM&rsquo;s net
+      lean; Phase 1 attributes each real zap to the stance of the post it paid for.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="l">Proposal</th>
+            <th>Posts</th>
+            <th>Phase 2 &mdash; what people say</th>
+            <th>Phase 1 &mdash; sats for / against</th>
+            <th>Money</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <p class="note">Two proposals (118, 347) show no money direction: sats landed only on
+      posts that argue neither way. That&rsquo;s a finding, not a gap — we don&rsquo;t draw a
+      needle where no money took a side.</p>
+  </section>
+
+  <!-- HIGHLIGHTS -->
+  <section class="sec">
+    <h2>Three readings worth showing</h2>
+    <p class="h2sub">The gauge earns trust when the numbers surprise you.</p>
+
+    <div class="cards">
+      <div class="card">
+        <div class="k">BIP 444 &middot; Datacarrier</div>
+        <div class="big neg">&minus;99</div>
+        <div class="cap"><b>3,258 sats against, 21 for.</b> A 155-to-1 ratio. Not an opinion
+          poll — money on the table.</div>
+      </div>
+      <div class="card">
+        <div class="k">BIP 141 &middot; SegWit</div>
+        <div class="big neg">&minus;42</div>
+        <div class="cap">The posts read <b>+77</b>. The money reads <b>&minus;42</b>. The gap
+          between what people <b>say</b> and what they <b>pay for</b> — the whole thesis, on
+          real data.</div>
+      </div>
+      <div class="card">
+        <div class="k">BIP 119 &middot; CTV</div>
+        <div class="big mid">+7</div>
+        <div class="cap"><b>625 for, 542 against.</b> Genuinely split. For a proposal that
+          has divided Bitcoin for years, that&rsquo;s the honest answer.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">
+    STANDALONE DEMO &nbsp;/&nbsp; src/sentiment/demo/gauge.html &mdash; embedded, no network, no key<br>
+    5 TS PACKAGES &middot; shared &middot; voting &middot; sentiment &middot; service &middot; analytics &nbsp;&mdash;&nbsp; all typecheck clean<br>
+    GAUGE = (good &minus; not good) / (good + not good) &middot; NEUTRALS EXCLUDED &middot; A NET LEAN, NOT A SHARE OF PEOPLE
+  </div>
+</div>
+
+<script>
+const ROWS = [
+ {bip:110,name:"BIP 110",n:118,score:45,f:63,a:24,ne:31,split:1,sf:7191,sa:694,ss:82},
+ {bip:119,name:"CTV",n:129,score:51,f:40,a:13,ne:76,split:1,sf:625,sa:542,ss:7},
+ {bip:300,name:"Drivechains",n:183,score:24,f:55,a:34,ne:94,split:1,sf:6205,sa:3870,ss:23},
+ {bip:444,name:"Datacarrier",n:129,score:6,f:28,a:25,ne:76,split:1,sf:21,sa:3258,ss:-99},
+ {bip:360,name:"Quantum / P2QRH",n:169,score:72,f:80,a:13,ne:76,split:1,sf:815,sa:252,ss:53},
+ {bip:141,name:"SegWit",n:122,score:77,f:53,a:7,ne:62,split:1,sf:1253,sa:3095,ss:-42},
+ {bip:341,name:"Taproot",n:130,score:83,f:86,a:8,ne:36,split:1,sf:296,sa:23,ss:86},
+ {bip:352,name:"Silent Payments",n:133,score:86,f:90,a:7,ne:36,split:1,sf:8449,sa:321,ss:93},
+ {bip:158,name:"Compact Filters",n:90,score:80,f:53,a:6,ne:31,split:1,sf:75164,sa:0,ss:100},
+ {bip:54,name:"Consensus Cleanup",n:66,score:67,f:25,a:5,ne:36,split:1,sf:664,sa:21,ss:94},
+ {bip:340,name:"Schnorr",n:12,score:100,f:6,a:0,ne:6,split:1,sf:8688,sa:192,ss:96},
+ {bip:118,name:"ANYPREVOUT",n:72,score:22,f:25,a:16,ne:31,split:0},
+ {bip:347,name:"OP_CAT",n:6,score:100,f:1,a:0,ne:5,split:0},
+];
+const cls = s => s > 15 ? 'pos' : s < -15 ? 'neg' : 'mid';
+const num = n => n.toLocaleString();
+
+document.getElementById('rows').innerHTML = ROWS.map(r => {
+  const mag = Math.min(Math.abs(r.score), 100) / 2; // half-width for centre-zero bar
+  const fill = r.score >= 0
+    ? `<div class="fill pos" style="width:${mag}%"></div>`
+    : `<div class="fill neg" style="width:${mag}%"></div>`;
+  const lean = `<span class="lean"><span class="bar"><div class="zero"></div>${fill}</span>` +
+    `<span class="score ${cls(r.score)}">${r.score>0?'+':''}${r.score}</span></span>`;
+
+  const split = r.split
+    ? `<span class="split"><span class="f">${num(r.sf)}</span><span class="dash">/</span>` +
+      `<span class="a">${num(r.sa)}</span></span>`
+    : `<span class="nodir">no direction</span>`;
+  const money = r.split
+    ? `<span class="score ${cls(r.ss)}">${r.ss>0?'+':''}${r.ss}</span>`
+    : `<span class="nodir">&mdash;</span>`;
+
+  return `<tr>
+    <td class="l"><span class="bipn">${r.bip}</span> <span class="bipname">${r.name}</span></td>
+    <td>${num(r.n)}</td>
+    <td>${lean}</td>
+    <td>${split}</td>
+    <td>${money}</td>
+  </tr>`;
+}).join('');
+</script>
+</body>
+</html>
