@@ -301,7 +301,29 @@ def parse_json_object(raw: str) -> dict:
 def _validate_word_count(text: str, minimum: int, maximum: int, field: str) -> None:
     count = len(text.split())
     if count < minimum or count > maximum:
-        raise ValueError(f"{field} must contain {minimum}-{maximum} words")
+        raise ValueError(
+            f"{field} must contain {minimum}-{maximum} words; received {count}"
+        )
+
+
+def _fit_replacement_text(text: str, field: str) -> str:
+    minimum, maximum = (
+        (3, 25) if field == "plain_summary" else (70, 110)
+    )
+    normalized = normalize_space(text)
+    words = normalized.split()
+    if len(words) <= maximum:
+        return normalized
+
+    bounded = " ".join(words[:maximum])
+    sentence_ends = [
+        match.end()
+        for match in re.finditer(r"[.!?](?=\s|$)", bounded)
+        if len(bounded[:match.end()].split()) >= minimum
+    ]
+    if sentence_ends:
+        return bounded[:sentence_ends[-1]].strip()
+    return bounded
 
 
 def _resolve_evidence_quote(quote: str, section_content: str) -> Optional[str]:
@@ -435,7 +457,10 @@ def apply_verification(
                 rejection.field,
                 original.model_copy(
                     update={
-                        "text": rejection.replacement_text,
+                        "text": _fit_replacement_text(
+                            rejection.replacement_text,
+                            rejection.field,
+                        ),
                         "basis": rejection.replacement_basis or original.basis,
                     }
                 ),

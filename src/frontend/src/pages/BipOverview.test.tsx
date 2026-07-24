@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import type { BipOverview } from '@/api/types';
+import { ErrorState } from '@/components/product';
 import { OverviewContent, OverviewSkeleton } from './BipPages';
 
 
@@ -75,5 +76,13 @@ describe('BIP Overview', () => {
       'href',
       '/bips/341',
     );
+  });
+
+  it('shows the backend failure detail', () => {
+    render(<ErrorState message="Overview verification failed after one repair." />);
+
+    expect(screen.getByText(
+      'Overview verification failed after one repair.',
+    )).toBeInTheDocument();
   });
 });

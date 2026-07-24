@@ -1,6 +1,8 @@
+import asyncio
 import hashlib
 import json
 import logging
+import time
 from datetime import datetime, timezone
 from typing import AsyncGenerator
 
@@ -14,7 +16,8 @@ from .config import LlmConfig, load_config
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
 logger = logging.getLogger("soft_fork_bips_llm")
-OVERVIEW_PROMPT_VERSION = "overview-v2"
+OVERVIEW_PROMPT_VERSION = "overview-v3"
+OVERVIEW_FAILURE_COOLDOWN_SECONDS = 30
 
 
 def validation_error_summary(error: Exception) -> str:
@@ -56,6 +59,8 @@ def init_app(config_override: LlmConfig | None = None) -> FastAPI:
     db.init_db(connection)
     connection.close()
     logger.info("LLM cache DB at %s", explain_db_path)
+    overview_locks: dict[str, asyncio.Lock] = {}
+    overview_failures: dict[str, tuple[float, int, str]] = {}
 
     async def db_dependency() -> AsyncGenerator:
         connection = db.connect(explain_db_path)
@@ -160,25 +165,48 @@ def init_app(config_override: LlmConfig | None = None) -> FastAPI:
             config.ppq_model,
             config.ppq_api_key,
         )
-        try:
+
+        def validate_verification(raw_verification: str) -> dict:
             verification = overview.VerificationDraft.model_validate(
-                overview.parse_json_object(verifier_raw)
+                overview.parse_json_object(raw_verification)
             )
             verified_draft = overview.apply_verification(draft, verification)
-            payload = overview.validate_overview(verified_draft, bundle)
-        except (ValueError, json.JSONDecodeError) as exc:
+            return overview.validate_overview(verified_draft, bundle)
+
+        try:
+            payload = validate_verification(verifier_raw)
+        except (ValueError, json.JSONDecodeError) as first_verification_error:
             logger.warning(
-                "Overview %s verification failed: %s",
+                "Overview %s verification needs repair: %s",
                 bundle.target_bip,
-                validation_error_summary(exc),
+                validation_error_summary(first_verification_error),
             )
-            raise HTTPException(
-                status_code=502,
-                detail=(
-                    "Overview verification failed: "
-                    f"{validation_error_summary(exc)}"
-                ),
-            ) from exc
+            repaired_verifier_raw = (
+                await llm.request_overview_verification_repair(
+                    source_text,
+                    draft.model_dump_json(),
+                    verifier_raw,
+                    validation_error_summary(first_verification_error),
+                    bundle.target_bip,
+                    config.ppq_model,
+                    config.ppq_api_key,
+                )
+            )
+            try:
+                payload = validate_verification(repaired_verifier_raw)
+            except (ValueError, json.JSONDecodeError) as repair_error:
+                logger.warning(
+                    "Overview %s verification repair failed: %s",
+                    bundle.target_bip,
+                    validation_error_summary(repair_error),
+                )
+                raise HTTPException(
+                    status_code=502,
+                    detail=(
+                        "Overview verification failed after one repair: "
+                        f"{validation_error_summary(repair_error)}"
+                    ),
+                ) from repair_error
 
         payload.update(
             {
@@ -252,26 +280,86 @@ def init_app(config_override: LlmConfig | None = None) -> FastAPI:
                 status_code=503,
                 detail="LLM API key is not configured",
             )
-        try:
-            return await generate_overview(connection, bundle)
-        except httpx.TimeoutException as exc:
+        generation_key = (
+            f"{bundle.target_bip}:{config.ppq_model}:"
+            f"{OVERVIEW_PROMPT_VERSION}:{bundle.source_hash}"
+        )
+        lock = overview_locks.setdefault(generation_key, asyncio.Lock())
+
+        def raise_recent_failure() -> None:
+            failure = overview_failures.get(generation_key)
+            if not failure:
+                return
+            expires_at, status_code, detail = failure
+            remaining = int(expires_at - time.monotonic()) + 1
+            if remaining <= 0:
+                overview_failures.pop(generation_key, None)
+                return
             raise HTTPException(
-                status_code=504,
-                detail="Overview generation timed out",
-            ) from exc
-        except httpx.HTTPStatusError as exc:
-            status = 401 if exc.response.status_code == 401 else 502
-            detail = (
-                "LLM API key was rejected"
-                if status == 401
-                else "LLM provider rejected Overview generation"
+                status_code=status_code,
+                detail=(
+                    f"{detail} Automatic generation is paused for "
+                    f"{remaining} seconds."
+                ),
+                headers={"Retry-After": str(remaining)},
             )
-            raise HTTPException(status_code=status, detail=detail) from exc
-        except httpx.HTTPError as exc:
-            raise HTTPException(
-                status_code=503,
-                detail="LLM provider unavailable",
-            ) from exc
+
+        if not force:
+            raise_recent_failure()
+
+        async with lock:
+            if not force:
+                cached = cached_overview(connection, bundle)
+                if cached:
+                    return cached
+                raise_recent_failure()
+            try:
+                result = await generate_overview(connection, bundle)
+            except httpx.TimeoutException as exc:
+                error = HTTPException(
+                    status_code=504,
+                    detail="Overview generation timed out",
+                )
+                overview_failures[generation_key] = (
+                    time.monotonic() + OVERVIEW_FAILURE_COOLDOWN_SECONDS,
+                    error.status_code,
+                    str(error.detail),
+                )
+                raise error from exc
+            except httpx.HTTPStatusError as exc:
+                status = 401 if exc.response.status_code == 401 else 502
+                detail = (
+                    "LLM API key was rejected"
+                    if status == 401
+                    else "LLM provider rejected Overview generation"
+                )
+                error = HTTPException(status_code=status, detail=detail)
+                overview_failures[generation_key] = (
+                    time.monotonic() + OVERVIEW_FAILURE_COOLDOWN_SECONDS,
+                    error.status_code,
+                    str(error.detail),
+                )
+                raise error from exc
+            except httpx.HTTPError as exc:
+                error = HTTPException(
+                    status_code=503,
+                    detail="LLM provider unavailable",
+                )
+                overview_failures[generation_key] = (
+                    time.monotonic() + OVERVIEW_FAILURE_COOLDOWN_SECONDS,
+                    error.status_code,
+                    str(error.detail),
+                )
+                raise error from exc
+            except HTTPException as error:
+                overview_failures[generation_key] = (
+                    time.monotonic() + OVERVIEW_FAILURE_COOLDOWN_SECONDS,
+                    error.status_code,
+                    str(error.detail),
+                )
+                raise
+            overview_failures.pop(generation_key, None)
+            return result
 
     @app.post("/explain")
     def explain(

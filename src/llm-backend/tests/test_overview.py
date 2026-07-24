@@ -1,3 +1,4 @@
+import asyncio
 import json
 from dataclasses import replace
 from pathlib import Path
@@ -250,7 +251,10 @@ def test_verifier_can_rewrite_required_claim_using_validated_evidence(
         "rejections": [{
             "field": "in_plain_terms",
             "reason": "The original wording overstated the cited material.",
-            "replacement_text": replacement,
+            "replacement_text": (
+                f"{replacement} "
+                + "Unsupported trailing wording " * 30
+            ),
             "replacement_basis": "stated",
         }],
     })
@@ -312,7 +316,7 @@ async def test_generation_cache_and_source_invalidation(
     ) as client:
         changed_model = await client.post("/overview", json={"bip_number": 119})
 
-    monkeypatch.setattr(main_module, "OVERVIEW_PROMPT_VERSION", "overview-v3")
+    monkeypatch.setattr(main_module, "OVERVIEW_PROMPT_VERSION", "overview-v4")
     prompt_app = init_app(replace(config, ppq_model="test-model-v2"))
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=prompt_app),
@@ -327,6 +331,40 @@ async def test_generation_cache_and_source_invalidation(
     assert changed_model.json()["cached"] is False
     assert changed_prompt.json()["cached"] is False
     assert calls["generate"] == 4
+
+
+@pytest.mark.anyio
+async def test_coalesces_concurrent_overview_generation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = _config(tmp_path)
+    calls = {"generate": 0}
+
+    async def generate(*_args) -> str:
+        calls["generate"] += 1
+        await asyncio.sleep(0.05)
+        return json.dumps(_draft())
+
+    async def approved(*_args) -> str:
+        return json.dumps({"approved": True, "rejections": []})
+
+    monkeypatch.setattr(llm, "request_overview", generate)
+    monkeypatch.setattr(llm, "request_overview_verification", approved)
+    app = init_app(config)
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        first, second = await asyncio.gather(
+            client.post("/overview", json={"bip_number": 119}),
+            client.post("/overview", json={"bip_number": 119}),
+        )
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert sorted([first.json()["cached"], second.json()["cached"]]) == [False, True]
+    assert calls["generate"] == 1
 
 
 @pytest.mark.anyio
@@ -353,6 +391,7 @@ async def test_repairs_once_and_rejects_failed_verification(
     monkeypatch.setattr(llm, "request_overview", invalid)
     monkeypatch.setattr(llm, "request_overview_repair", repaired)
     monkeypatch.setattr(llm, "request_overview_verification", rejected)
+    monkeypatch.setattr(llm, "request_overview_verification_repair", rejected)
     app = init_app(config)
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app),
@@ -362,6 +401,61 @@ async def test_repairs_once_and_rejects_failed_verification(
 
     assert response.status_code == 502
     assert "Verifier rejected required field" in response.json()["detail"]
+
+
+@pytest.mark.anyio
+async def test_repairs_invalid_verifier_replacement(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = _config(tmp_path)
+    valid_replacement = _draft()["in_plain_terms"]["text"]
+
+    async def generated(*_args) -> str:
+        return json.dumps(_draft())
+
+    async def invalid_verification(*_args) -> str:
+        return json.dumps({
+            "approved": False,
+            "rejections": [{
+                "field": "in_plain_terms",
+                "reason": "Needs more conservative wording.",
+                "replacement_text": "Too short.",
+                "replacement_basis": "inferred",
+            }],
+        })
+
+    async def repaired_verification(*_args) -> str:
+        return json.dumps({
+            "approved": False,
+            "rejections": [{
+                "field": "in_plain_terms",
+                "reason": "Rewritten against the same evidence.",
+                "replacement_text": valid_replacement,
+                "replacement_basis": "inferred",
+            }],
+        })
+
+    monkeypatch.setattr(llm, "request_overview", generated)
+    monkeypatch.setattr(
+        llm,
+        "request_overview_verification",
+        invalid_verification,
+    )
+    monkeypatch.setattr(
+        llm,
+        "request_overview_verification_repair",
+        repaired_verification,
+    )
+    app = init_app(config)
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        response = await client.post("/overview", json={"bip_number": 119})
+
+    assert response.status_code == 200
+    assert response.json()["inPlainTerms"]["basis"] == "inferred"
 
 
 @pytest.mark.anyio
@@ -382,7 +476,11 @@ async def test_missing_key_missing_bip_and_timeout(
     assert missing_bip.status_code == 404
 
     timeout_config = _config(tmp_path / "timeout")
+    timeout_calls = 0
+
     async def timeout(*_args) -> str:
+        nonlocal timeout_calls
+        timeout_calls += 1
         raise httpx.ReadTimeout("timed out")
 
     monkeypatch.setattr(llm, "request_overview", timeout)
@@ -392,5 +490,9 @@ async def test_missing_key_missing_bip_and_timeout(
         base_url="http://test",
     ) as client:
         timed_out = await client.post("/overview", json={"bip_number": 119})
+        cooldown = await client.post("/overview", json={"bip_number": 119})
 
     assert timed_out.status_code == 504
+    assert cooldown.status_code == 504
+    assert "paused for" in cooldown.json()["detail"]
+    assert timeout_calls == 1

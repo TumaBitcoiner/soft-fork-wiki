@@ -483,12 +483,18 @@ export function EmptyState({ title, body }: { title: string; body: string }) {
   );
 }
 
-export function ErrorState({ onRetry }: { onRetry?: () => void }) {
+export function ErrorState({
+  onRetry,
+  message = 'Give it another try.',
+}: {
+  onRetry?: () => void;
+  message?: string;
+}) {
   return (
     <div className="rounded-xl border border-dashed border-red-300 bg-red-50 p-10 text-center">
       <TriangleAlert className="mx-auto size-7 text-red-500" />
       <h3 className="mt-4 font-semibold text-red-800">Something went wrong.</h3>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-red-700">Give it another try.</p>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-red-700">{message}</p>
       {onRetry && (
         <Button variant="outline" className="mt-4" onClick={onRetry}>
           Try again

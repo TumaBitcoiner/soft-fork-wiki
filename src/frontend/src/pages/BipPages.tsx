@@ -557,7 +557,14 @@ export function BipDetailPage() {
                 <OverviewSkeleton />
               ) : overview.isError ? (
                 <div>
-                  <ErrorState onRetry={() => overview.refetch()} />
+                  <ErrorState
+                    onRetry={() => overview.refetch()}
+                    message={
+                      overview.error instanceof Error
+                        ? overview.error.message
+                        : 'Overview generation failed. Please try again.'
+                    }
+                  />
                   <p className="mt-3 text-center text-sm text-[#6B7280]">
                     The original BIP remains available in the “What the BIP Says” tab.
                   </p>

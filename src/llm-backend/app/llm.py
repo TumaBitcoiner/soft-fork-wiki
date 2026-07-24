@@ -223,6 +223,58 @@ new evidence. Set approved=false when any rejection is present.
     )
 
 
+async def request_overview_verification_repair(
+    source_text: str,
+    draft_json: str,
+    invalid_verification: str,
+    validation_error: str,
+    target_bip: int,
+    model: str,
+    api_key: str,
+) -> str:
+    system_prompt = """
+Repair an invalid BIP Overview verification response. Audit only against the
+supplied draft, its existing evidence, and the supplied SOURCE blocks. Do not
+add evidence or outside knowledge.
+
+Return JSON only:
+{
+  "approved": true|false,
+  "rejections": [
+    {
+      "field": "plain_summary|in_plain_terms|what_it_changes|benefits|tradeoffs|open_questions",
+      "index": 0,
+      "reason": "short factual reason",
+      "replacement_text": "required for rejected required fields",
+      "replacement_basis": "stated|inferred"
+    }
+  ]
+}
+
+Optional array rejections require a zero-based index and no replacement.
+Rejected plain_summary requires a 3-25 word replacement. Rejected
+in_plain_terms requires a 70-110 word replacement. Required replacements must
+be fully supported by the same evidence already cited by that field.
+""".strip()
+    return await _request_content(
+        [
+            {"role": "system", "content": system_prompt},
+            {
+                "role": "user",
+                "content": (
+                    f"Target BIP: {target_bip}\n\n"
+                    f"Validation error:\n{validation_error}\n\n"
+                    f"Invalid verification:\n{invalid_verification}\n\n"
+                    f"Overview draft:\n{draft_json}\n\n"
+                    f"Sources:\n{source_text}"
+                ),
+            },
+        ],
+        model,
+        api_key,
+    )
+
+
 def trim_words(text: str, max_words: int) -> str:
     words = text.split()
     if len(words) <= max_words:
