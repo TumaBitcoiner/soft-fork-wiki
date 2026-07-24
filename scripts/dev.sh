@@ -4,6 +4,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 backend_pid=""
 llm_backend_pid=""
+sentiment_pid=""
 frontend_pid=""
 
 cleanup() {
@@ -12,6 +13,9 @@ cleanup() {
   fi
   if [[ -n "${llm_backend_pid}" ]]; then
     kill "${llm_backend_pid}" 2>/dev/null || true
+  fi
+  if [[ -n "${sentiment_pid}" ]]; then
+    kill "${sentiment_pid}" 2>/dev/null || true
   fi
   if [[ -n "${frontend_pid}" ]]; then
     kill "${frontend_pid}" 2>/dev/null || true
@@ -27,6 +31,16 @@ fi
 
 if [[ ! -d "${repo_root}/src/frontend/node_modules" ]]; then
   echo "Frontend dependencies are missing. Run: npm --prefix src/frontend install" >&2
+  exit 1
+fi
+
+if [[ ! -d "${repo_root}/src/sentiment/node_modules" ]]; then
+  echo "Sentiment dependencies are missing. Run: corepack pnpm@9.0.0 --dir src/sentiment install" >&2
+  exit 1
+fi
+
+if ! command -v corepack >/dev/null 2>&1; then
+  echo "Corepack is required to run the pnpm sentiment workspace." >&2
   exit 1
 fi
 
@@ -52,6 +66,22 @@ backend_pid=$!
   --reload \
   --port 8001 &
 llm_backend_pid=$!
+
+(
+  if [[ -f "${repo_root}/.env" ]]; then
+    set -a
+    # shellcheck disable=SC1091
+    source "${repo_root}/.env"
+    set +a
+  fi
+  if [[ -n "${GEMINI_API_KEY:-}" && -z "${SENTIMENT_PROVIDER:-}" ]]; then
+    export SENTIMENT_PROVIDER=gemini
+  fi
+  cd "${repo_root}/src/sentiment"
+  PORT=8002 SENTIMENT_TTL_MS=86400000 \
+    corepack pnpm@9.0.0 --filter @soft-fork-wiki/service dev
+) &
+sentiment_pid=$!
 
 npm --prefix src/frontend run dev &
 frontend_pid=$!

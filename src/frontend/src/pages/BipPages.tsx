@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useSeoMeta } from '@unhead/react';
 import {
   ArrowRight,
@@ -19,6 +19,7 @@ import {
   apiClient,
   type AskMode,
   type BipOverview,
+  type SentimentData,
   type SentimentChoice,
   type SourcedClaim,
 } from '@/api/apiClient';
@@ -30,13 +31,11 @@ import {
   DifficultyChip,
   EmptyState,
   ErrorState,
-  NpubLoginButton,
   PageHeader,
   SentimentMeter,
   SourceChip,
   StatusChip,
   TimelineEvent,
-  VoteModal,
 } from '@/components/product';
 import { Markdown } from '@/components/Markdown';
 import { sentimentLabel, voteButtonChoiceStyle } from '@/components/productConstants';
@@ -48,10 +47,178 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 
 const wrap = 'mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8';
+const thinSentimentSample = 5;
 
 function Seo({ title, description }: { title: string; description: string }) {
   useSeoMeta({ title: `${title} · Just Ask BIPs`, description });
   return null;
+}
+
+export function DemoVotePanel({ bipNumber }: { bipNumber: number }) {
+  const [choice, setChoice] = useState<SentimentChoice>('Neutral');
+  const [voted, setVoted] = useState<SentimentChoice | null>(null);
+
+  return (
+    <aside className="h-fit rounded-lg border border-[#D8D2C4] bg-[#FFFDF7] p-6">
+      <p className="font-mono text-xs font-bold uppercase tracking-[0.14em] text-[#9A4F00]">
+        Demo vote — not published to Nostr
+      </p>
+      <h2 className="mt-2 text-xl font-semibold">Zap your view</h2>
+      <p className="mt-2 text-sm leading-6 text-[#6B7280]">
+        Preview how a 10-sat signal for BIP {bipNumber} could work. No wallet,
+        payment service, signer, or relay is contacted.
+      </p>
+      <div className="mt-5 grid gap-2">
+        {(['For', 'Neutral', 'Against'] as SentimentChoice[]).map((item) => (
+          <button
+            key={item}
+            type="button"
+            data-selected={choice === item}
+            onClick={() => {
+              setChoice(item);
+              setVoted(null);
+            }}
+            className={cn(
+              'w-full rounded-md border border-[#D8D2C4] bg-white px-3 py-2 text-left text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00A7CC]',
+              voteButtonChoiceStyle[item],
+            )}
+          >
+            {sentimentLabel[item]}
+          </button>
+        ))}
+      </div>
+      <Button
+        type="button"
+        className="mt-4 w-full bg-[#F7931A] text-[#111827] hover:bg-[#E9850A]"
+        onClick={() => setVoted(choice)}
+      >
+        <Zap /> Demo zap — 10 sats
+      </Button>
+      {voted && (
+        <p role="status" className="mt-3 rounded-md bg-[#FFF4D6] p-3 text-sm leading-6 text-[#714000]">
+          Demo selection: {sentimentLabel[voted]}. Nothing was paid, signed, recorded, or published.
+        </p>
+      )}
+    </aside>
+  );
+}
+
+export function SentimentReadout({
+  data,
+  showNotes = true,
+}: {
+  data: SentimentData;
+  showNotes?: boolean;
+}) {
+  if (!data.hasSignal || data.sampleSize === 0) {
+    return (
+      <EmptyState
+        title="No Nostr discussion found"
+        body="No classified posts were found for this BIP in the current sentiment reading."
+      />
+    );
+  }
+
+  const thinSample = data.sampleSize < thinSentimentSample;
+  const computedAt = new Date(data.computedAt * 1000);
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="font-mono text-xs font-bold uppercase tracking-[0.14em] text-[#00838F]">
+            {data.snapshot ? 'Captured Nostr sentiment' : 'Live Nostr sentiment'}
+          </p>
+          <h2 className="mt-2 text-xl font-semibold">Where people stand</h2>
+          <p className="mt-2 text-sm leading-6 text-[#6B7280]">
+            We read {data.sampleSize.toLocaleString()} public Nostr
+            {data.sampleSize === 1 ? ' post' : ' posts'} tagged for this BIP and classified what each one said.
+          </p>
+        </div>
+        <div className="text-right text-xs leading-5 text-[#6B7280]">
+          <p>{data.mode === 'llm' ? 'LLM-classified posts' : 'Nostr signals'}</p>
+          {!Number.isNaN(computedAt.getTime()) && (
+            <time dateTime={computedAt.toISOString()}>
+              Measured {computedAt.toLocaleString()}
+            </time>
+          )}
+          {data.snapshot && <p>Bundled snapshot</p>}
+        </div>
+      </div>
+
+      {data.degraded && (
+        <p className="mt-5 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          Some relay reads did not complete, so this is a partial measurement.
+        </p>
+      )}
+      {thinSample && (
+        <p className="mt-5 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          Only a couple of posts were found — not enough to call a meaningful direction yet.
+        </p>
+      )}
+
+      {data.hasDirection ? (
+        <>
+          <div className="mt-6 flex items-end justify-between gap-4">
+            <div>
+              <p className="text-sm text-[#6B7280]">Directional score</p>
+              <p className="mt-1 text-4xl font-semibold">
+                {data.score > 0 ? '+' : ''}{data.score}
+              </p>
+            </div>
+            <p className="max-w-sm text-right text-xs leading-5 text-[#6B7280]">
+              Among classified posts, the score runs from −100 (all “not good”) to +100 (all “good”).
+            </p>
+          </div>
+          <div className="mt-5"><SentimentMeter data={data} /></div>
+        </>
+      ) : (
+        <p className="mt-6 rounded-md bg-[#F3F4F6] p-4 text-sm leading-6 text-[#4B5563]">
+          {data.directionNote}
+        </p>
+      )}
+
+      <div className="mt-5 grid gap-3 text-sm sm:grid-cols-3">
+        <p><strong>{data.counts.favour}</strong> said good for Bitcoin</p>
+        <p><strong>{data.counts.against}</strong> said not good</p>
+        <p><strong>{data.counts.neutral}</strong> were not sure</p>
+      </div>
+      <p className="mt-5 flex items-start gap-2 text-xs leading-5 text-[#6B7280]">
+        <Info className="mt-0.5 size-3.5 shrink-0" />
+        This measures sentiment in posts tagged for the BIP, not informed technical review, governance, activation readiness, or Bitcoin consensus.
+      </p>
+
+      {data.narrative && (
+        <p className="mt-5 rounded-md border border-[#D8D2C4] bg-[#FAF7EF] p-4 text-sm leading-6">
+          {data.narrative}
+        </p>
+      )}
+
+      {showNotes && data.recentNotes.length > 0 && (
+        <>
+          <h3 className="mt-8 flex items-center gap-2 text-lg font-semibold">
+            <Users className="size-4 text-[#00A7CC]" /> Recent classified posts
+          </h3>
+          <div className="mt-4 space-y-3">
+            {data.recentNotes.map((item, index) => (
+              <div key={`${item.author}-${index}`} className="rounded-lg border p-4">
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <span className="font-mono text-[#6B7280]">{item.author}</span>
+                  <span className={cn(
+                    'font-semibold',
+                    item.choice === 'For' ? 'text-green-700' : item.choice === 'Against' ? 'text-red-700' : 'text-gray-600',
+                  )}>
+                    {sentimentLabel[item.choice]} · {item.time}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm leading-6">{item.note}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -488,6 +655,7 @@ export function OverviewContent({ overview }: { overview: BipOverview }) {
 export function BipDetailPage() {
   const { bipNumber } = useParams();
   const number = Number(bipNumber);
+  const [activeTab, setActiveTab] = useState('overview');
   const query = useQuery({ queryKey: ['bip', number], queryFn: () => apiClient.getBip(number), retry: false });
   const overview = useQuery({
     queryKey: ['bip-overview', number],
@@ -495,7 +663,12 @@ export function BipDetailPage() {
     enabled: Number.isInteger(number) && number >= 0,
     retry: false,
   });
-  const sentiment = useQuery({ queryKey: ['sentiment', number], queryFn: () => apiClient.getSentiment(number) });
+  const sentiment = useQuery({
+    queryKey: ['sentiment', number],
+    queryFn: () => apiClient.getSentiment(number),
+    enabled: activeTab === 'sentiment' && Number.isInteger(number) && number >= 0,
+    retry: false,
+  });
 
   if (query.isLoading) {
     return <AppShell><main className={wrap}><div className="h-80 animate-pulse rounded-xl bg-white" /></main></AppShell>;
@@ -543,7 +716,7 @@ export function BipDetailPage() {
           </Button>
         </div>
 
-        <Tabs defaultValue="overview" className="mt-12">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-12">
           <TabsList variant="line" className="w-full justify-start overflow-x-auto bg-transparent">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="source">What the BIP Says</TabsTrigger>
@@ -609,15 +782,27 @@ export function BipDetailPage() {
           </TabsContent>
 
           <TabsContent value="sentiment" className="pt-8">
-            {sentiment.isError ? (
-              <ErrorState onRetry={() => sentiment.refetch()} />
+            {sentiment.isLoading ? (
+              <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+                <div className="h-80 animate-pulse rounded-xl bg-white" />
+                <div className="h-72 animate-pulse rounded-xl bg-white" />
+              </div>
+            ) : sentiment.isError ? (
+              <ErrorState
+                onRetry={() => sentiment.refetch()}
+                message={sentiment.error instanceof Error
+                  ? sentiment.error.message
+                  : 'Sentiment analysis is unavailable.'}
+              />
             ) : sentiment.data && (
-              <div className="max-w-2xl rounded-xl border bg-white p-6">
-                <p className="text-sm text-[#6B7280]">Community signal only. Bitcoin consensus is not decided by votes.</p>
-                <div className="mt-5"><SentimentMeter data={sentiment.data} /></div>
-                <Button asChild className="mt-6" variant="outline">
-                  <Link to={`/sentiment?bip=${bip.number}`}>See where people stand <ArrowRight /></Link>
-                </Button>
+              <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+                <div className="rounded-xl border bg-white p-6">
+                  <SentimentReadout data={sentiment.data} />
+                  <Button asChild className="mt-6" variant="outline">
+                    <Link to={`/sentiment?bip=${bip.number}`}>Open the full sentiment view <ArrowRight /></Link>
+                  </Button>
+                </div>
+                <DemoVotePanel bipNumber={bip.number} />
               </div>
             )}
           </TabsContent>
@@ -635,15 +820,10 @@ export function BipDetailPage() {
 export function SentimentPage() {
   const [params] = useSearchParams();
   const bipNumber = Number(params.get('bip')) || 119;
-  const [npub, setNpub] = useState('');
-  const [choice, setChoice] = useState<SentimentChoice>('Neutral');
-  const [note, setNote] = useState('');
-  const [modal, setModal] = useState(false);
-  const client = useQueryClient();
-  const query = useQuery({ queryKey: ['sentiment', bipNumber], queryFn: () => apiClient.getSentiment(bipNumber) });
-  const submit = useMutation({
-    mutationFn: apiClient.submitSentiment,
-    onSuccess: (data) => client.setQueryData(['sentiment', bipNumber], data),
+  const query = useQuery({
+    queryKey: ['sentiment', bipNumber],
+    queryFn: () => apiClient.getSentiment(bipNumber),
+    retry: false,
   });
 
   return (
@@ -653,8 +833,7 @@ export function SentimentPage() {
         <PageHeader
           eyebrow="Community signal"
           title={`Where People Stand on BIP ${bipNumber}`}
-          description="A paid, pseudonymous signal for research context — not a governance mechanism, activation poll, or measure of Bitcoin consensus."
-          action={<NpubLoginButton npub={npub} onLogin={setNpub} />}
+          description="A reading of public Nostr posts for research context — not a governance mechanism, activation poll, or measure of Bitcoin consensus."
         />
 
         <div className="mt-8 rounded-lg border border-[#D8D2C4] border-l-4 border-l-[#DC2626] bg-[#FFFDF7] p-4 text-sm font-medium text-[#7F1D1D]">
@@ -664,82 +843,22 @@ export function SentimentPage() {
         {query.isLoading ? (
           <div className="mt-8 h-72 animate-pulse rounded-xl bg-white" />
         ) : query.isError ? (
-          <div className="mt-8"><ErrorState onRetry={() => query.refetch()} /></div>
-        ) : query.data && (query.data.totalVotes === 0 ? (
-          <div className="mt-8"><EmptyState title="No one has weighed in yet." body="No one has weighed in yet. Be the first to add a signal." /></div>
-        ) : (
+          <div className="mt-8">
+            <ErrorState
+              onRetry={() => query.refetch()}
+              message={query.error instanceof Error
+                ? query.error.message
+                : 'Sentiment analysis is unavailable.'}
+            />
+          </div>
+        ) : query.data && (
           <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
             <div className="archive-surface rounded-lg border border-[#D8D2C4] p-6">
-              <div className="flex items-end justify-between">
-                <div>
-                  <p className="text-sm text-[#6B7280]">Current mood score</p>
-                  <p className="mt-1 text-4xl font-semibold">{query.data.score > 0 ? '+' : ''}{query.data.score}</p>
-                </div>
-                <div className="text-right text-sm text-[#6B7280]">
-                  <p><strong className="text-[#111827]">{query.data.totalVotes}</strong> signals</p>
-                  <p><strong className="text-[#111827]">{query.data.totalSats.toLocaleString()}</strong> sats contributed</p>
-                </div>
-              </div>
-              <div className="mt-7"><SentimentMeter data={query.data} /></div>
-
-              <h2 className="mt-10 flex items-center gap-2 text-lg font-semibold"><Users className="size-4 text-[#00A7CC]" /> Recent notes</h2>
-              <div className="mt-4 space-y-3">
-                {query.data.recentNotes.map((item, index) => (
-                  <div key={`${item.author}-${index}`} className="rounded-lg border p-4">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-mono text-[#6B7280]">{item.author}</span>
-                      <span className={cn(
-                        'font-semibold',
-                        item.choice === 'For' ? 'text-green-700' : item.choice === 'Against' ? 'text-red-700' : 'text-gray-600',
-                      )}>
-                        {sentimentLabel[item.choice]} · {item.time}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-sm leading-6">{item.note}</p>
-                  </div>
-                ))}
-              </div>
+              <SentimentReadout data={query.data} />
             </div>
-
-            <aside className="h-fit archive-surface rounded-lg border border-[#D8D2C4] p-6">
-              <h2 className="text-xl font-semibold">Add your signal</h2>
-              <p className="mt-2 text-sm leading-6 text-[#6B7280]">
-                Your 10 sats signal helps show where the community stands. It does not decide Bitcoin consensus.
-              </p>
-              <div className="mt-5 grid gap-2">
-                {(['For', 'Neutral', 'Against'] as SentimentChoice[]).map((item) => (
-                  <button
-                    key={item}
-                    data-selected={choice === item}
-                    onClick={() => setChoice(item)}
-                    className={cn(
-                      'w-full rounded-md border border-[#D8D2C4] bg-white px-3 py-2 text-left text-sm font-medium transition',
-                      voteButtonChoiceStyle[item],
-                    )}
-                  >
-                    {sentimentLabel[item]}
-                  </button>
-                ))}
-              </div>
-              <Textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                className="mt-4"
-                placeholder="Why do you see it this way?"
-              />
-              <Button
-                className="mt-4 w-full bg-[#F7931A] text-[#111827] hover:bg-[#E9850A]"
-                disabled={!npub}
-                onClick={() => setModal(true)}
-              >
-                <Zap /> Add your signal — 10 sats
-              </Button>
-              {!npub && <p className="mt-2 text-center text-xs text-[#6B7280]">Use mock npub login first.</p>}
-            </aside>
+            <DemoVotePanel bipNumber={bipNumber} />
           </div>
-        ))}
-
-        <VoteModal open={modal} onOpenChange={setModal} choice={choice} onConfirm={() => submit.mutate({ bipNumber, choice, note, npub })} />
+        )}
       </main>
     </AppShell>
   );

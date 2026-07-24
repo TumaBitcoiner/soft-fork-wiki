@@ -159,6 +159,26 @@ export interface SentimentData {
   totalSats: number;
   score: number;
   recentNotes: SentimentNote[];
+  mode: 'llm' | 'zaps';
+  scoreBasis: 'sats' | 'notes' | 'magnitude' | 'none';
+  hasSignal: boolean;
+  hasDirection: boolean;
+  directionNote: string;
+  satsScore: number | null;
+  voteScore: number | null;
+  degraded: boolean;
+  totalSatsFor: number;
+  totalSatsAgainst: number;
+  counts: {
+    favour: number;
+    against: number;
+    neutral: number;
+  };
+  sampleSize: number;
+  uniqueVoters: number;
+  narrative: string;
+  computedAt: number;
+  snapshot?: boolean;
 }
 
 export interface SubmitSentimentPayload {

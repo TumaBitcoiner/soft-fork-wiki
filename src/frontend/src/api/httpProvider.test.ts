@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ApiUnavailableError, httpProvider } from './httpProvider';
+import { httpProvider } from './httpProvider';
 
 
 describe('httpProvider', () => {
@@ -36,10 +36,33 @@ describe('httpProvider', () => {
     vi.unstubAllGlobals();
   });
 
-  it('does not fall back to mock sentiment in HTTP mode', async () => {
-    await expect(httpProvider.getSentiment(119)).rejects.toBeInstanceOf(
-      ApiUnavailableError,
+  it('uses the live LLM sentiment endpoint without a mock fallback', async () => {
+    const payload = { bipNumber: 119, sampleSize: 129 };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => payload,
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(httpProvider.getSentiment(119)).resolves.toBe(payload);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:8002/sentiment/119?mode=llm',
+      expect.any(Object),
     );
+    vi.unstubAllGlobals();
+  });
+
+  it('surfaces sentiment-service messages without falling back to mock data', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 502,
+      json: async () => ({ message: 'GEMINI_API_KEY is required.' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(httpProvider.getSentiment(999))
+      .rejects.toThrow('API request failed (502): GEMINI_API_KEY is required.');
+    vi.unstubAllGlobals();
   });
 
   it('requires a BIP number for askBips', async () => {

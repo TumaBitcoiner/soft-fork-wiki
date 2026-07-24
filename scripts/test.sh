@@ -11,4 +11,6 @@ fi
 cd "${repo_root}"
 "${repo_root}/.venv/bin/pytest" src/backend/tests
 "${repo_root}/.venv/bin/pytest" src/llm-backend/tests
+corepack pnpm@9.0.0 --dir src/sentiment -r typecheck
+corepack pnpm@9.0.0 --dir src/sentiment --filter @soft-fork-wiki/service test
 npm --prefix src/frontend test

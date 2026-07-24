@@ -126,6 +126,7 @@ export const mockProvider: ApiProvider = {
       for: counts.For,
       totalVotes: current.totalVotes + 1,
       totalSats: current.totalSats + 10,
+      uniqueVoters: current.uniqueVoters + 1,
       recentNotes: [
         { author: `${payload.npub.slice(0, 9)}…`, choice: payload.choice, note: payload.note || 'No note added — just added a signal.', time: 'now' },
         ...current.recentNotes,

@@ -1,10 +1,12 @@
 # Local development
 
-Phase 1 runs the React frontend and two FastAPI backends locally:
+Local development runs the React frontend, two FastAPI backends, and the
+sentiment service:
 
 - Frontend: <http://localhost:5173>
 - Backend: <http://localhost:8000>
 - LLM backend: <http://localhost:8001>
+- Sentiment service: <http://localhost:8002>
 - API health: <http://localhost:8000/health>
 
 SQLite is used by default. On the first backend start, the backend clones
@@ -20,6 +22,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r src/backend/requirements-dev.txt
 npm --prefix src/frontend install
+corepack pnpm@9.0.0 --dir src/sentiment install
 cp .env.example .env
 cp src/frontend/.env.example src/frontend/.env
 ```
@@ -27,7 +30,7 @@ cp src/frontend/.env.example src/frontend/.env
 The example values work for the default local setup. Do not commit either
 `.env` file.
 
-## Start both services
+## Start the complete project
 
 ```bash
 npm run dev
@@ -56,6 +59,13 @@ LLM backend:
 uvicorn app.main:app --app-dir src/llm-backend --reload --port 8001
 ```
 
+Sentiment service:
+
+```bash
+set -a; source .env; set +a
+corepack pnpm@9.0.0 --dir src/sentiment --filter @soft-fork-wiki/service dev
+```
+
 ## Environment variables
 
 Backend variables:
@@ -68,14 +78,21 @@ Backend variables:
 - `CORS_ORIGINS` — comma-separated frontend origins.
 - `LLM_BASE_URL` — base URL for the LLM backend; defaults to
   `http://localhost:8001`.
-- `PPQ_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY` — reserved for Phase 2.
+- `PPQ_API_KEY`, `ANTHROPIC_API_KEY` — server-side model credentials.
 - `NOSTR_RELAYS` — reserved for Phase 3 server-side reads.
+- `GEMINI_API_KEY` — used server-side for uncached sentiment classification.
+- `SENTIMENT_PROVIDER` — optional sentiment provider override; use `gemini` for
+  `GEMINI_API_KEY`.
+- `SENTIMENT_TTL_MS` — LLM sentiment cache duration in milliseconds.
+- `SENTIMENT_SNAPSHOT_FIRST` — defaults to `1`; set to `0` to force live
+  classification instead of using captured readings.
 
 Frontend variables:
 
 - `VITE_DATA_MODE=http` — use the local API. Mock mode is available only with
   the explicit value `mock`.
 - `VITE_API_BASE_URL=http://localhost:8000`
+- `VITE_SENTIMENT_BASE_URL=http://localhost:8002`
 
 ## API
 
@@ -104,13 +121,19 @@ curl -X POST \
 
 The backend never pulls on a read request.
 
-Not implemented yet:
+The sentiment HTTP surface is a separate service:
 
-- Ask Anything (Phase 2/5)
-- `/api/sentiment/{bip_number}` (Phase 3)
-- Nostr publishing helpers (Phase 4)
+```text
+GET /health
+GET /sentiment/{bip_number}?mode=llm
+```
 
-HTTP mode returns an explicit unavailable error for these features.
+Captured readings are bundled for BIPs 54, 110, 118, 119, 141, 158, 300, 340,
+341, 347, 352, 360, and 444. They load immediately without an API key.
+Other BIPs perform a cold Nostr discovery and LLM-classification pass, which can
+take 30–90 seconds and requires the selected provider's server-side API key.
+The demo zap-vote UI does not contact a wallet, sign an event, publish to Nostr,
+or change the returned sentiment reading.
 
 ## LLM backend
 
@@ -135,6 +158,8 @@ Or run each side independently:
 .venv/bin/pytest src/backend/tests
 .venv/bin/pytest src/llm-backend/tests
 npm --prefix src/frontend test
+corepack pnpm@9.0.0 --dir src/sentiment -r typecheck
+corepack pnpm@9.0.0 --dir src/sentiment --filter @soft-fork-wiki/service test
 ```
 
 ## Manual Phase 1 checklist
@@ -142,6 +167,12 @@ npm --prefix src/frontend test
 - Open `/health` and confirm `status` is `ok` with a non-zero `bipCount`.
 - Open the frontend and confirm the BIP explorer shows backend records.
 - Open an individual BIP and confirm its metadata and source tab load.
+- Open BIPs 110, 341, and 360 and confirm “Where People Stand” loads from the
+  captured sentiment snapshot.
+- Open `/sentiment?bip=110` and confirm it shows the analyzed post count even
+  when `totalVotes` is zero.
+- Use the demo vote controls and confirm they state that nothing was paid,
+  signed, recorded, or published.
 - Stop the backend and confirm the frontend shows an error rather than mock BIPs.
 - Set `VITE_DATA_MODE=mock`, restart the frontend, and confirm mock mode is
   available only when explicitly selected.

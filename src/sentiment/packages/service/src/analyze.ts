@@ -76,12 +76,81 @@ export async function analyzeBipDetailed(
   return { summary: analysis.summary, notes: analysis.notes, tally };
 }
 
+/**
+ * Captured real readings, classified earlier from live Nostr. Served only when
+ * a live run comes back empty — which today means the LLM key hit its spending
+ * cap, not that the BIP has no discussion. Better to show the reading we
+ * genuinely measured than a needle stuck at zero. `snapshot` marks it so the
+ * caller can label it "as of" rather than "live".
+ */
+import SNAPSHOT from "./snapshot.json" with { type: "json" };
+
+/** Timestamp of the captured readings committed in snapshot.json. */
+const SNAPSHOT_COMPUTED_AT = 1_784_903_583;
+
+type SnapshotEntry = {
+  bipNumber: number; score: number; sampleSize: number;
+  counts: { favour: number; against: number; neutral: number };
+  satsFor: number; satsAgainst: number; totalSats: number;
+  narrative?: string; recentNotes?: ClassifiedNote[];
+};
+
+/**
+ * Rebuild a real `SentimentSummary` from the captured counts and run it back
+ * through the same adapter a live run uses, so every derived field is correct
+ * and consistent — we only substitute the source of the counts, not the maths.
+ */
+function fromSnapshot(bipNumber: number): SentimentData | null {
+  const e = (SNAPSHOT as Record<string, SnapshotEntry>)[String(bipNumber)];
+  if (!e) return null;
+  const summary: SentimentSummary = {
+    bipNumber,
+    sampleSize: e.sampleSize,
+    favour: e.counts.favour,
+    against: e.counts.against,
+    neutral: e.counts.neutral,
+    netScore: e.score / 100,
+    narrative: e.narrative ?? "",
+    computedAt: SNAPSHOT_COMPUTED_AT,
+  };
+  return {
+    ...toSentimentData({
+      summary,
+      notes: e.recentNotes ?? [],
+      tally: {
+        bipNumber, favour: 0, against: 0, neutral: 0, uniqueVoters: 0,
+        zappedSatsFavour: 0, zappedSatsAgainst: 0,
+      },
+      now: Math.floor(Date.now() / 1000),
+      recentNoteLimit: 8,
+    }),
+    snapshot: true,
+  };
+}
+
 /** Analyze a BIP and return the exact payload the frontend consumes. */
 export async function loadSentimentData(
   bipNumber: number,
   config: ServiceConfig,
 ): Promise<SentimentData> {
+  // Snapshot-first for BIPs we have already measured. A cold live run classifies
+  // 130-200 posts one model call at a time — tens of seconds, and a single
+  // dropped connection surfaces as an error in the UI. For a proposal whose
+  // reading we captured earlier the same day, serving it instantly is both
+  // faster and more reliable, and the numbers are real. `?refresh=1` still
+  // forces a live re-run, and BIPs with no snapshot always go live.
+  if (config.snapshotFirst) {
+    const snap = fromSnapshot(bipNumber);
+    if (snap) return snap;
+  }
+
   const { summary, notes, tally } = await analyzeBipDetailed(bipNumber, config);
+  // Every note failed to classify (spend cap / provider outage). Fall back to
+  // the captured reading rather than returning an all-zero gauge.
+  if (summary.sampleSize === 0) {
+    const snap = fromSnapshot(bipNumber);
+    if (snap) return snap;
+  }
   return toSentimentData({
     summary,
     notes,
