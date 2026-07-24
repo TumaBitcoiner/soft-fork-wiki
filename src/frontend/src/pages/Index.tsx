@@ -3,7 +3,7 @@ import { useSeoMeta } from '@unhead/react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, MessageCircleQuestion, Search, ShieldCheck, Users } from 'lucide-react';
 import { apiClient } from '@/api/apiClient';
-import { AppShell, BipCard, ErrorState, SearchAskBar, TimelineEvent } from '@/components/product';
+import { AppShell, BipCard, ErrorState, SearchAskBar } from '@/components/product';
 import { Button } from '@/components/ui/button';
 
 const journeySteps = [
@@ -20,7 +20,6 @@ const Index = () => {
   });
 
   const bips = useQuery({ queryKey: ['bips', 'featured'], queryFn: () => apiClient.listBips({}) });
-  const timeline = useQuery({ queryKey: ['timeline'], queryFn: () => apiClient.getTimeline({}) });
   const featured = bips.data?.filter((bip) => [141, 341, 119].includes(bip.number));
 
   return (
@@ -137,34 +136,10 @@ const Index = () => {
           )}
         </section>
 
-        <section className="border-y border-[#D8D2C4] bg-white">
-          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#F7931A]">Selected milestones</p>
-                <h2 className="mt-3 font-heading text-3xl font-semibold tracking-tight sm:text-4xl">Consensus changes in context</h2>
-                <p className="mt-3 max-w-2xl text-[#6B7280]">Follow proposal creation, deployment, and activation as distinct parts of the historical record.</p>
-              </div>
-              <Button asChild variant="outline">
-                <Link to="/timeline">Full timeline <ArrowRight /></Link>
-              </Button>
-            </div>
-            {timeline.isError ? (
-              <p className="mt-8 rounded-lg border border-dashed border-[#D8D2C4] p-6 text-center text-sm text-[#6B7280]">
-                Timeline data is not available from the Phase 1 local backend yet.
-              </p>
-            ) : (
-              <div className="mt-8 grid gap-5 md:grid-cols-3">
-                {timeline.data?.slice(2, 5).map((item, index) => <TimelineEvent key={item.bipNumber} item={item} index={index + 2} />)}
-              </div>
-            )}
-          </div>
-        </section>
-
         <section className="mx-auto grid max-w-7xl gap-5 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
           {[
             [Search, 'Ask with evidence', 'Every answer exposes the BIP sections used and makes uncertainty visible.'],
-            [BookOpen, 'Compare proposals', 'Browse status, topic, difficulty, and consensus history in one calm index.'],
+            [BookOpen, 'Compare proposals', 'Browse status, topic, and difficulty in one calm index.'],
             [Users, 'See where people stand', 'Community signal, clearly separated from Bitcoin consensus itself.'],
           ].map(([Icon, title, body]) => {
             const FeatureIcon = Icon as typeof Search;

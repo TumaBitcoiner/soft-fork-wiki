@@ -547,7 +547,6 @@ export function BipDetailPage() {
           <TabsList variant="line" className="w-full justify-start overflow-x-auto bg-transparent">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="source">What the BIP Says</TabsTrigger>
-            <TabsTrigger value="timeline">Timeline</TabsTrigger>
             <TabsTrigger value="sentiment">Where People Stand</TabsTrigger>
           </TabsList>
 
@@ -605,20 +604,6 @@ export function BipDetailPage() {
                     {bip.content}
                   </pre>
                 )
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="timeline" className="pt-8">
-            <div className="rounded-xl border bg-white p-6">
-              <p className="font-mono text-sm text-[#00A7CC]">{bip.created}</p>
-              <h2 className="mt-2 text-xl font-semibold">Proposal created</h2>
-              {bip.activated && (
-                <>
-                  <div className="my-5 h-10 border-l-2 border-[#D8D2C4]" />
-                  <p className="font-mono text-sm text-green-700">{bip.activated}</p>
-                  <h2 className="mt-2 text-xl font-semibold">Consensus activation milestone</h2>
-                </>
               )}
             </div>
           </TabsContent>
