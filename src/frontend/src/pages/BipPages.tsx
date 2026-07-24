@@ -5,11 +5,8 @@ import { useSeoMeta } from '@unhead/react';
 import {
   ArrowRight,
   BookOpen,
-  CheckCircle2,
   Grid2X2,
-  HelpCircle,
   Info,
-  Layers3,
   List,
   MessageSquareText,
   Send,
@@ -751,54 +748,6 @@ export function SentimentPage() {
         ))}
 
         <VoteModal open={modal} onOpenChange={setModal} choice={choice} onConfirm={() => submit.mutate({ bipNumber, choice, note, npub })} />
-      </main>
-    </AppShell>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// How We Stay Neutral
-// ---------------------------------------------------------------------------
-
-export function MethodPage() {
-  const sections = [
-    [BookOpen, 'Source-first answers', 'Answers are constructed around BIP material and always expose citations. Explanations distinguish proposal text from interpretation.'],
-    [Sparkles, 'Plain-language explanations', 'Every proposal starts with a plain-language explanation before any technical detail. No question is too basic.'],
-    [Users, 'Both sides shown fairly', 'We show the strongest supportive arguments and the strongest concerns side by side — and never say which side is right.'],
-    [Layers3, 'Sentiment is not governance', 'Paid signals can show community interest. They do not activate proposals, represent nodes or miners, or determine Bitcoin consensus.'],
-    [CheckCircle2, 'Uncertainty is visible', 'Coverage and confidence are aids, not guarantees. Draft status, missing context, and unresolved review are called out directly.'],
-    [HelpCircle, 'Backend-ready frontend', 'The UI talks only to a typed API client. Mock and HTTP providers share the same interface, so FastAPI can replace demo data without rewriting screens.'],
-  ];
-
-  return (
-    <AppShell>
-      <Seo title="How We Stay Neutral" description="Just Ask BIPs is not here to tell you what to think." />
-      <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
-        <PageHeader
-          eyebrow="Our method"
-          title="How We Stay Neutral"
-          description="Just Ask BIPs is not here to tell you what to think. It is here to help you understand what a proposal says, why people disagree, and where to keep reading."
-        />
-        <div className="mt-10 grid gap-5 md:grid-cols-2">
-          {sections.map(([Icon, title, text]) => {
-            const SectionIcon = Icon as typeof BookOpen;
-            return (
-              <section key={String(title)} className="archive-surface rounded-lg border border-[#D8D2C4] p-6">
-                <SectionIcon className="size-6 text-[#00A7CC]" />
-                <h2 className="mt-5 text-xl font-semibold">{String(title)}</h2>
-                <p className="mt-3 leading-7 text-[#5B6472]">{String(text)}</p>
-              </section>
-            );
-          })}
-        </div>
-
-        <section className="cyber-grid mt-8 rounded-lg border border-[#00D1FF]/20 p-6 text-[#F6F1E7] shadow-[0_0_24px_rgba(0,209,255,.06)] sm:p-8">
-          <p className="font-mono text-xs uppercase tracking-widest text-[#F7931A]">Integration status</p>
-          <h2 className="mt-3 text-2xl font-semibold">Frontend demo now. FastAPI next.</h2>
-          <p className="mt-4 max-w-3xl leading-7 text-gray-300">
-            The current build uses believable local mock responses. Future endpoints will provide indexed BIP records, retrieval-grounded answers, timeline data, and sentiment persistence. No UI component calls GitHub, AI providers, Nostr, or payment services directly.
-          </p>
-        </section>
       </main>
     </AppShell>
   );

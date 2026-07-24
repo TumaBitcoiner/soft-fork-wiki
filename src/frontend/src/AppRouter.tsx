@@ -3,7 +3,7 @@ import { ScrollToTop } from "./components/ScrollToTop";
 
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import { AskPage, BipDetailPage, ExplorePage, MethodPage, SentimentPage, TimelinePage } from "./pages/BipPages";
+import { AskPage, BipDetailPage, ExplorePage, SentimentPage, TimelinePage } from "./pages/BipPages";
 
 export function AppRouter() {
   return (
@@ -16,7 +16,6 @@ export function AppRouter() {
         <Route path="/timeline" element={<TimelinePage />} />
         <Route path="/bips/:bipNumber" element={<BipDetailPage />} />
         <Route path="/sentiment" element={<SentimentPage />} />
-        <Route path="/method" element={<MethodPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

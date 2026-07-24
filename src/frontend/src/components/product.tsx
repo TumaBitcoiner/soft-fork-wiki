@@ -65,7 +65,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-5 text-sm text-[#6B7280]">
-            <Link to="/method" className="hover:text-[#111827]">How We Stay Neutral</Link>
             <span>Independent educational project</span>
             <span>Born at Bitcoin++ Toronto Edition</span>
             <a href="https://shakespeare.diy" target="_blank" rel="noreferrer" className="hover:text-[#111827]">Vibed with Shakespeare</a>
