@@ -38,6 +38,7 @@ import {
   TimelineEvent,
 } from '@/components/product';
 import { Markdown } from '@/components/Markdown';
+import { mediawikiToMarkdown } from '@/lib/mediawiki';
 import { sentimentLabel, voteButtonChoiceStyle } from '@/components/productConstants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -678,7 +679,12 @@ export function BipDetailPage() {
   }
 
   const bip = query.data;
-  const isMarkdownSource = bip.sourceUrl?.toLowerCase().endsWith('.md') ?? false;
+  const sourceUrl = bip.sourceUrl?.toLowerCase() ?? '';
+  const isMarkdownSource = sourceUrl.endsWith('.md');
+  const isMediaWikiSource = sourceUrl.endsWith('.mediawiki') || sourceUrl.endsWith('.wiki');
+  const renderedContent = isMediaWikiSource
+    ? mediawikiToMarkdown(bip.content)
+    : bip.content;
 
   return (
     <AppShell>
@@ -758,9 +764,12 @@ export function BipDetailPage() {
               {bip.citations.map((citation) => (
                 <div key={citation.id} className="rounded-xl border bg-white p-6">
                   <SourceChip citation={citation} />
-                  {isMarkdownSource ? (
+                  {isMarkdownSource || isMediaWikiSource ? (
                     <div className="mt-4 border-l-2 border-[#00A7CC] pl-4 text-[#4B5563]">
-                      <Markdown content={citation.excerpt} className="text-[15px] leading-7" />
+                      <Markdown
+                        content={isMediaWikiSource ? mediawikiToMarkdown(citation.excerpt) : citation.excerpt}
+                        className="text-[15px] leading-7"
+                      />
                     </div>
                   ) : (
                     <blockquote className="mt-4 border-l-2 border-[#00A7CC] pl-4 leading-7 text-[#4B5563]">{citation.excerpt}</blockquote>
@@ -768,9 +777,12 @@ export function BipDetailPage() {
                 </div>
               ))}
               {bip.content && (
-                isMarkdownSource ? (
+                isMarkdownSource || isMediaWikiSource ? (
                   <div className="max-h-[70vh] overflow-auto rounded-xl border bg-white p-6 text-[#374151]">
-                    <Markdown content={bip.content} className="text-sm leading-6" />
+                    <Markdown
+                      content={renderedContent || bip.content}
+                      className="text-sm leading-6"
+                    />
                   </div>
                 ) : (
                   <pre className="max-h-[70vh] overflow-auto whitespace-pre-wrap rounded-xl border bg-white p-6 font-mono text-sm leading-6 text-[#374151]">
