@@ -10,7 +10,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from . import db, ingest, repository
 from .config import AppConfig, load_config
-from .models import BipResponse, ExplainRequest, ExplainResponse, HealthResponse, RefreshResponse
+from .models import (
+    AskRequest,
+    AskResponse,
+    BipResponse,
+    ExplainRequest,
+    ExplainResponse,
+    HealthResponse,
+    RefreshResponse,
+)
 
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
@@ -206,6 +214,26 @@ def create_app(config: Optional[AppConfig] = None) -> FastAPI:
         data = response.json()
         try:
             return ExplainResponse(**data)
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail="Invalid LLM response") from exc
+
+    @app.post("/api/ask", response_model=AskResponse)
+    async def ask(payload: AskRequest) -> AskResponse:
+        try:
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.post(
+                    app_config.llm_base_url.rstrip("/") + "/ask",
+                    json=payload.model_dump(),
+                )
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=503, detail="LLM backend unavailable") from exc
+
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=response.text)
+
+        data = response.json()
+        try:
+            return AskResponse(**data)
         except Exception as exc:
             raise HTTPException(status_code=502, detail="Invalid LLM response") from exc
 

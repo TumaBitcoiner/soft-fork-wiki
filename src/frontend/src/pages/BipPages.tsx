@@ -164,7 +164,7 @@ export function ExplorePage() {
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         <Button asChild size="sm" variant="ghost"><Link to={`/bips/${bip.number}`}>Read</Link></Button>
-                        <Button asChild size="sm" variant="ghost"><Link to={`/ask?bip=${bip.number}`}>Ask</Link></Button>
+                        <Button asChild size="sm" variant="ghost"><Link to={`/ask?bip=${bip.number}&origin=explore`}>Ask</Link></Button>
                       </div>
                     </td>
                   </tr>
@@ -233,10 +233,13 @@ const prompts = [
 export function AskPage() {
   const [params] = useSearchParams();
   const initial = params.get('q') ?? '';
+  const origin = params.get('origin');
   const bipNumber = Number(params.get('bip')) || undefined;
   const [question, setQuestion] = useState(initial);
   const [mode, setMode] = useState<AskMode>('Balanced');
-  const mutation = useMutation({ mutationFn: apiClient.askBipChat });
+  const mutation = useMutation({
+    mutationFn: origin === 'explore' ? apiClient.askBipExplain : apiClient.askBipChat,
+  });
 
   useEffect(() => {
     if (initial && !mutation.data && !mutation.isPending) mutation.mutate({ question: initial, mode, bipNumber });

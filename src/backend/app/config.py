@@ -42,6 +42,7 @@ class AppConfig:
     db_path: Path
     admin_token: str
     cors_origins: tuple[str, ...]
+    llm_base_url: str
 
 
 def load_config() -> AppConfig:
@@ -68,4 +69,5 @@ def load_config() -> AppConfig:
         db_path=_sqlite_path(database_url),
         admin_token=os.getenv("ADMIN_TOKEN", "change-me"),
         cors_origins=cors_origins,
+        llm_base_url=os.getenv("LLM_BASE_URL", "http://localhost:8001"),
     )

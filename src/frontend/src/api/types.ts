@@ -163,6 +163,7 @@ export interface ApiProvider {
   getBipMetadata(bipNumber: number): Promise<Bip>;
   askBips(payload: AskPayload): Promise<AskAnswer>;
   askBipChat(payload: AskPayload): Promise<AskAnswer>;
+  askBipExplain(payload: AskPayload): Promise<AskAnswer>;
   getTimeline(params?: TimelineParams): Promise<TimelineItem[]>;
   getSentiment(bipNumber: number): Promise<SentimentData>;
   submitSentiment(payload: SubmitSentimentPayload): Promise<SentimentData>;

@@ -66,6 +66,8 @@ Backend variables:
   `sqlite:///./data/app.sqlite`.
 - `ADMIN_TOKEN` — protects the manual refresh endpoint.
 - `CORS_ORIGINS` — comma-separated frontend origins.
+- `LLM_BASE_URL` — base URL for the LLM backend; defaults to
+  `http://localhost:8001`.
 - `PPQ_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY` — reserved for Phase 2.
 - `NOSTR_RELAYS` — reserved for Phase 3 server-side reads.
 
@@ -74,7 +76,6 @@ Frontend variables:
 - `VITE_DATA_MODE=http` — use the local API. Mock mode is available only with
   the explicit value `mock`.
 - `VITE_API_BASE_URL=http://localhost:8000`
-- `VITE_LLM_BASE_URL=http://localhost:8001`
 
 ## API
 
@@ -88,6 +89,7 @@ GET  /api/bips/{bip_number}
 GET  /api/bips/{bip_number}/meta
 POST /api/admin/refresh-bips
 POST /api/explain
+POST /api/ask
 POST /ask
 GET  /last-answer/{bip_number}
 ```

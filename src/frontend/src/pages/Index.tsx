@@ -114,7 +114,7 @@ const Index = () => {
             </div>
           ) : (
             <div className="mt-8 grid gap-5 md:grid-cols-3">
-              {featured?.map((bip) => <BipCard key={bip.number} bip={bip} />)}
+              {featured?.map((bip) => <BipCard key={bip.number} bip={bip} askOrigin="explore" />)}
             </div>
           )}
         </section>

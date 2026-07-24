@@ -2,7 +2,6 @@ import type { ApiProvider, ListBipsParams } from './types';
 import { simulationProvider } from './simulationProvider';
 
 const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
-const llmBaseUrl = (import.meta.env.VITE_LLM_BASE_URL || baseUrl).replace(/\/$/, '');
 
 export class ApiUnavailableError extends Error {
   constructor(feature: string) {
@@ -11,8 +10,8 @@ export class ApiUnavailableError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit, base = baseUrl): Promise<T> {
-  const response = await fetch(`${base}${path}`, {
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${baseUrl}${path}`, {
     ...init,
     headers: { 'Content-Type': 'application/json', ...init?.headers },
   });
@@ -125,6 +124,9 @@ export const httpProvider: ApiProvider = {
       caveat: 'Generated summary without citations.',
     };
   },
+  askBipExplain(payload) {
+    return httpProvider.askBips(payload);
+  },
   async askBipChat(payload) {
     if (!payload.bipNumber) {
       throw new Error('Select a BIP to ask about.');
@@ -139,7 +141,7 @@ export const httpProvider: ApiProvider = {
       updated_at: string;
       cached: boolean;
     }>(
-      '/ask',
+      '/api/ask',
       {
         method: 'POST',
         body: JSON.stringify({
@@ -147,7 +149,6 @@ export const httpProvider: ApiProvider = {
           question: payload.question,
         }),
       },
-      llmBaseUrl,
     );
 
     const answer = (response.answer ?? '').trim();

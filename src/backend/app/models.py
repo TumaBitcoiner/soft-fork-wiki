@@ -71,3 +71,19 @@ class ExplainResponse(BaseModel):
     created_at: str
     updated_at: str
     cached: bool
+
+
+class AskRequest(BaseModel):
+    bip_number: int
+    question: str
+
+
+class AskResponse(BaseModel):
+    bip_number: int
+    question: str
+    answer: str
+    model: str
+    prompt_version: str
+    created_at: str
+    updated_at: str
+    cached: bool

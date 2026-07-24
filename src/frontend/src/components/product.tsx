@@ -226,7 +226,8 @@ export function SourceChip({ citation, onClick }: { citation: Citation; onClick?
   );
 }
 
-export function BipCard({ bip }: { bip: Bip }) {
+export function BipCard({ bip, askOrigin }: { bip: Bip; askOrigin?: string }) {
+  const askSuffix = askOrigin ? `&origin=${encodeURIComponent(askOrigin)}` : '';
   return (
     <article className="archive-surface group relative flex h-full flex-col overflow-hidden rounded-lg border border-[#D8D2C4] p-5 transition hover:-translate-y-0.5 hover:border-[#A69F91] hover:shadow-[4px_4px_0_rgba(17,24,39,.06)] before:absolute before:top-0 before:left-5 before:h-1 before:w-12 before:bg-[#F7931A]">
       <div className="flex items-start justify-between gap-3">
@@ -248,10 +249,10 @@ export function BipCard({ bip }: { bip: Bip }) {
       </div>
       <div className="mt-5 flex flex-wrap items-center gap-4 border-t border-[#EDF0F4] pt-4 text-sm font-semibold">
         <Link to={`/bips/${bip.number}`} className="text-[#111827] hover:underline">Read</Link>
-        <Link to={`/ask?bip=${bip.number}&q=${encodeURIComponent(`Explain BIP ${bip.number} in plain terms.`)}`} className="text-[#00A7CC] hover:underline">
+        <Link to={`/ask?bip=${bip.number}${askSuffix}&q=${encodeURIComponent(`Explain BIP ${bip.number} in plain terms.`)}`} className="text-[#00A7CC] hover:underline">
           Ask
         </Link>
-        <Link to={`/ask?bip=${bip.number}&q=${encodeURIComponent(`Compare BIP ${bip.number} to Taproot.`)}`} className="text-[#4B5563] hover:text-[#111827]">
+        <Link to={`/ask?bip=${bip.number}${askSuffix}&q=${encodeURIComponent(`Compare BIP ${bip.number} to Taproot.`)}`} className="text-[#4B5563] hover:text-[#111827]">
           Compare <ChevronRight className="inline size-4" />
         </Link>
       </div>

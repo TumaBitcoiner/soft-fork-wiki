@@ -39,6 +39,7 @@ def _app(tmp_path: Path):
             "http://localhost:5173",
             "http://127.0.0.1:5173",
         ),
+        llm_base_url="http://localhost:8001",
     )
     return create_app(config)
 

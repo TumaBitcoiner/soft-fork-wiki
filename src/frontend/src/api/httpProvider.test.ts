@@ -34,4 +34,9 @@ describe('httpProvider', () => {
     await expect(httpProvider.askBipChat({ question: 'Explain Taproot.', mode: 'Balanced' }))
       .rejects.toThrow('Select a BIP to ask about.');
   });
+
+  it('requires a BIP number for askBipExplain', async () => {
+    await expect(httpProvider.askBipExplain({ question: 'Explain Taproot.', mode: 'Balanced' }))
+      .rejects.toThrow('Select a BIP to ask about.');
+  });
 });
