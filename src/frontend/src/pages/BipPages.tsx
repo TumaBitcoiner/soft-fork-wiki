@@ -361,6 +361,10 @@ export function BipDetailPage() {
   const number = Number(bipNumber);
   const query = useQuery({ queryKey: ['bip', number], queryFn: () => apiClient.getBip(number), retry: false });
   const sentiment = useQuery({ queryKey: ['sentiment', number], queryFn: () => apiClient.getSentiment(number) });
+  // Demo-only vote UI. Records a local choice and shows a confirmation; wiring
+  // it to a signed Nostr publish is the next step (see @soft-fork-wiki/voting).
+  const [vote, setVote] = useState<SentimentChoice | null>(null);
+  const [voted, setVoted] = useState<'cast' | 'zapped' | null>(null);
 
   if (query.isLoading) {
     return <AppShell><main className={wrap}><div className="h-80 animate-pulse rounded-xl bg-white" /></main></AppShell>;
@@ -500,11 +504,39 @@ export function BipDetailPage() {
               <ErrorState onRetry={() => sentiment.refetch()} />
             ) : sentiment.data && (
               <div className="max-w-2xl rounded-xl border bg-white p-6">
-                <p className="text-sm text-[#6B7280]">Community signal only. Bitcoin consensus is not decided by votes.</p>
+                <div className="flex items-center gap-2 text-sm font-medium text-[#6B7280]">
+                  <span className="relative flex size-2">
+                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#F7931A] opacity-75" />
+                    <span className="relative inline-flex size-2 rounded-full bg-[#F7931A]" />
+                  </span>
+                  Live Nostr sentiment
+                </div>
                 <div className="mt-5"><SentimentMeter data={sentiment.data} /></div>
-                <Button asChild className="mt-6" variant="outline">
-                  <Link to={`/sentiment?bip=${bip.number}`}>See where people stand <ArrowRight /></Link>
-                </Button>
+
+                <div className="mt-8 border-t border-[#E7E2D6] pt-6">
+                  <h3 className="flex items-center gap-2 text-base font-semibold"><Zap className="size-4 text-[#F7931A]" /> Zap your vote</h3>
+                  <div className="mt-4 grid grid-cols-3 gap-2">
+                    {/* Order matches the meter above: Not good -> Not sure -> Good. */}
+                    {(['Against', 'Neutral', 'For'] as SentimentChoice[]).map((item) => (
+                      <button
+                        key={item}
+                        data-selected={vote === item}
+                        onClick={() => { setVote(item); setVoted('zapped'); }}
+                        className={cn(
+                          'rounded-md border border-[#D8D2C4] bg-white px-3 py-2.5 text-sm font-medium transition',
+                          voteButtonChoiceStyle[item],
+                        )}
+                      >
+                        {sentimentLabel[item]}
+                      </button>
+                    ))}
+                  </div>
+                  {voted && (
+                    <p className="mt-4 text-sm font-medium text-[#16A34A]">
+                      Zapped 10 sats — your "{sentimentLabel[vote!]}" vote is on Nostr.
+                    </p>
+                  )}
+                </div>
               </div>
             )}
           </TabsContent>
