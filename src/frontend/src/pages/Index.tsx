@@ -93,17 +93,26 @@ const Index = () => {
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#9A4F00]">The journey</p>
-          <h2 className="mt-3 font-heading text-3xl font-semibold tracking-tight sm:text-4xl">From curious to informed, one step at a time</h2>
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {journeySteps.map((step, index) => (
-              <div key={step.title} className="archive-surface relative rounded-lg border border-[#D8D2C4] p-5">
-                <span className="font-mono text-xs font-bold text-[#00A7CC]">{String(index + 1).padStart(2, '0')}</span>
-                <h3 className="mt-3 text-lg font-semibold">{step.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-[#6B7280]">{step.body}</p>
-              </div>
-            ))}
+        <section className="relative isolate overflow-hidden border-b border-[#B9B0A2]">
+          <img
+            src="/images/journey-steps.png"
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 -z-20 size-full object-cover object-[62%_center] sm:object-center"
+          />
+          <div className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(246,241,231,.88)_0%,rgba(246,241,231,.62)_42%,rgba(246,241,231,.34)_100%)]" />
+          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+            <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#9A4F00]">The journey</p>
+            <h2 className="mt-3 font-heading text-3xl font-semibold tracking-tight sm:text-4xl">From curious to informed, one step at a time</h2>
+            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {journeySteps.map((step, index) => (
+                <div key={step.title} className="archive-surface relative rounded-lg border border-[#D8D2C4] p-5">
+                  <span className="font-mono text-xs font-bold text-[#00A7CC]">{String(index + 1).padStart(2, '0')}</span>
+                  <h3 className="mt-3 text-lg font-semibold">{step.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-[#6B7280]">{step.body}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
