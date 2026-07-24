@@ -1,21 +1,17 @@
 import { useState } from 'react';
-import { NavLink, Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
   BookOpen,
   Check,
   ChevronRight,
   CircleDollarSign,
-  ExternalLink,
   FileText,
   HelpCircle,
-  Menu,
-  ScrollText,
   Search,
   ShieldCheck,
   Sparkles,
   TriangleAlert,
-  X,
   Zap,
 } from 'lucide-react';
 import type {
@@ -35,16 +31,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { sentimentLabel } from '@/components/productConstants';
 
-const navItems = [
-  ['Explore Proposals', '/explore'],
-  ['Consensus Timeline', '/timeline'],
-  ['Ask Anything', '/ask'],
-  ['Where People Stand', '/sentiment'],
-  ['How We Stay Neutral', '/method'],
-];
-
 export function TopNav() {
-  const [open, setOpen] = useState(false);
   return (
     <header className="sticky top-0 z-40 border-b border-[#D8D2C4] bg-[#F6F1E7]/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -55,38 +42,10 @@ export function TopNav() {
             <span className="block font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-[#6B7280]">Consensus Edition</span>
           </span>
         </Link>
-        <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
-          {navItems.map(([label, href]) => (
-            <NavLink
-              key={href}
-              to={href}
-              className={({ isActive }) => cn(
-                'rounded-md px-3 py-2 text-sm font-medium text-[#4B5563] hover:bg-white hover:text-[#111827]',
-                isActive && 'bg-white text-[#111827] shadow-sm',
-              )}
-            >
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-        <div className="hidden lg:block">
-          <Button asChild>
-            <Link to="/ask">Ask Anything <ArrowRight /></Link>
-          </Button>
-        </div>
-        <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setOpen(!open)} aria-label="Toggle menu">
-          {open ? <X /> : <Menu />}
+        <Button asChild>
+          <Link to="/explore">Ask a BIP now <ArrowRight /></Link>
         </Button>
       </div>
-      {open && (
-        <nav className="border-t bg-[#F6F1E7] p-4 lg:hidden">
-          {navItems.map(([label, href]) => (
-            <NavLink key={href} to={href} onClick={() => setOpen(false)} className="block rounded-lg px-4 py-3 font-medium hover:bg-white">
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-      )}
     </header>
   );
 }
@@ -108,6 +67,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex flex-wrap items-center gap-5 text-sm text-[#6B7280]">
             <Link to="/method" className="hover:text-[#111827]">How We Stay Neutral</Link>
             <span>Independent educational project</span>
+            <span>Born at Bitcoin++ Toronto Edition</span>
             <a href="https://shakespeare.diy" target="_blank" rel="noreferrer" className="hover:text-[#111827]">Vibed with Shakespeare</a>
           </div>
         </div>
@@ -224,10 +184,13 @@ export function SourceChip({ citation, onClick }: { citation: Citation; onClick?
   );
 }
 
-export function BipCard({ bip, askOrigin }: { bip: Bip; askOrigin?: string }) {
-  const askSuffix = askOrigin ? `&origin=${encodeURIComponent(askOrigin)}` : '';
+export function BipCard({ bip }: { bip: Bip; askOrigin?: string }) {
   return (
-    <article className="archive-surface group relative flex h-full flex-col overflow-hidden rounded-lg border border-[#D8D2C4] p-5 transition hover:-translate-y-0.5 hover:border-[#A69F91] hover:shadow-[4px_4px_0_rgba(17,24,39,.06)] before:absolute before:top-0 before:left-5 before:h-1 before:w-12 before:bg-[#F7931A]">
+    <Link
+      to={`/bips/${bip.number}`}
+      aria-label={`Ask the BIP: BIP ${bip.number} ${bip.title}`}
+      className="archive-surface group relative flex h-full flex-col overflow-hidden rounded-lg border border-[#D8D2C4] p-5 transition before:absolute before:top-0 before:left-5 before:h-1 before:w-12 before:bg-[#F7931A] hover:-translate-y-0.5 hover:border-[#A69F91] hover:shadow-[4px_4px_0_rgba(17,24,39,.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00A7CC] focus-visible:ring-offset-2"
+    >
       <div className="flex items-start justify-between gap-3">
         <span className="font-mono text-sm font-bold text-[#9A4F00]">BIP {bip.number}</span>
         <StatusChip status={bip.status} />
@@ -245,16 +208,12 @@ export function BipCard({ bip, askOrigin }: { bip: Bip; askOrigin?: string }) {
           <span key={tag} className="rounded-md bg-[#F3F5F8] px-2 py-1 text-xs text-[#4B5563]">{tag}</span>
         ))}
       </div>
-      <div className="mt-5 flex flex-wrap items-center gap-4 border-t border-[#EDF0F4] pt-4 text-sm font-semibold">
-        <Link to={`/bips/${bip.number}`} className="text-[#111827] hover:underline">Read</Link>
-        <Link to={`/ask?bip=${bip.number}${askSuffix}&q=${encodeURIComponent(`Explain BIP ${bip.number} in plain terms.`)}`} className="text-[#00A7CC] hover:underline">
-          Ask
-        </Link>
-        <Link to={`/ask?bip=${bip.number}${askSuffix}&q=${encodeURIComponent(`Compare BIP ${bip.number} to Taproot.`)}`} className="text-[#4B5563] hover:text-[#111827]">
-          Compare <ChevronRight className="inline size-4" />
-        </Link>
-      </div>
-    </article>
+      <span className="mt-auto pt-5">
+        <span className="inline-flex w-fit items-center gap-2 rounded-md bg-[#111827] px-4 py-2 text-sm font-semibold text-white transition group-hover:bg-[#9A4F00]">
+          Ask the BIP <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
+        </span>
+      </span>
+    </Link>
   );
 }
 
@@ -326,38 +285,6 @@ export function BipMetadataPanel({ bip }: { bip: Bip }) {
   );
 }
 
-export function SourceDrawer({
-  citation,
-  open,
-  onOpenChange,
-}: {
-  citation?: Citation;
-  open: boolean;
-  onOpenChange: (value: boolean) => void;
-}) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{citation?.label}</DialogTitle>
-          <DialogDescription>What the BIP says · {citation?.section}</DialogDescription>
-        </DialogHeader>
-        <blockquote className="rounded-lg border-l-4 border-[#00A7CC] bg-[#F5FBFD] p-4 leading-7 text-[#374151]">
-          “{citation?.excerpt}”
-        </blockquote>
-        <p className="text-sm text-[#6B7280]">
-          Source links are provided for verification. Review the sources before deciding — the plain-language explanation may simplify the normative specification.
-        </p>
-        <DialogFooter>
-          <Button asChild variant="outline">
-            <a href={citation?.url} target="_blank" rel="noreferrer">Open primary source <ExternalLink /></a>
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 const coverageStyle: Record<CoverageTier, string> = {
   Strong: 'border-green-200 bg-green-50 text-green-700',
   Partial: 'border-amber-200 bg-amber-50 text-amber-800',
@@ -365,7 +292,6 @@ const coverageStyle: Record<CoverageTier, string> = {
 };
 
 export function AskAnswerCard({ answer }: { answer: AskAnswer }) {
-  const [citation, setCitation] = useState<Citation>();
   const showCoverageWarning = answer.coverageTier !== 'Strong';
   return (
     <article className="rounded-xl border border-[#D8D2C4] bg-white shadow-sm">
@@ -388,13 +314,6 @@ export function AskAnswerCard({ answer }: { answer: AskAnswer }) {
           <Markdown content={answer.inPlainTerms} className="editorial-copy mt-2 text-lg leading-8 text-[#1F3B2C]" />
         </div>
 
-        <div className="mt-4 rounded-lg border border-[#D8D2C4] bg-[#FAF7EF] p-4">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[#6B7280]">
-            <ScrollText className="size-3.5" /> What the BIPs say
-          </p>
-          <Markdown content={answer.whatBipsSay} className="mt-2 text-[15px] leading-7 text-[#374151]" />
-        </div>
-
         {showCoverageWarning && (
           <div className="mt-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
             <TriangleAlert className="mt-0.5 size-4 shrink-0" />
@@ -405,15 +324,8 @@ export function AskAnswerCard({ answer }: { answer: AskAnswer }) {
 
       <div className="grid gap-6 p-5 sm:p-6 md:grid-cols-[1fr_220px]">
         <div>
-          <h3 className="text-sm font-semibold">Source citations</h3>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {answer.citations.map((item) => (
-              <SourceChip key={item.id} citation={item} onClick={() => setCitation(item)} />
-            ))}
-          </div>
-
           {answer.relatedBips.length > 0 && (
-            <div className="mt-5">
+            <div>
               <h3 className="text-sm font-semibold">Related BIPs</h3>
               <div className="mt-2 flex flex-wrap gap-2">
                 {answer.relatedBips.map((number) => (
@@ -457,7 +369,6 @@ export function AskAnswerCard({ answer }: { answer: AskAnswer }) {
           <p className="mt-2 text-xs leading-5 text-[#6B7280]">Estimate of relevant source sections represented in this answer.</p>
         </div>
       </div>
-      <SourceDrawer citation={citation} open={Boolean(citation)} onOpenChange={(value) => { if (!value) setCitation(undefined); }} />
     </article>
   );
 }
