@@ -114,7 +114,7 @@ export const httpProvider: ApiProvider = {
       question: payload.question,
       shortAnswer: summary || 'No summary returned yet.',
       inPlainTerms: summary,
-      whatBipsSay: summary,
+      whatBipsSay: '',
       confidence: 0.5,
       coverage: 0.5,
       coverageTier: 'Partial',
@@ -126,6 +126,28 @@ export const httpProvider: ApiProvider = {
   },
   askBipExplain(payload) {
     return httpProvider.askBips(payload);
+  },
+  async getLatestAnswer(bipNumber) {
+    try {
+      const response = await request<{
+        bip_number: number;
+        question: string;
+        answer: string;
+        model: string;
+        prompt_version: string;
+        created_at: string;
+        updated_at: string;
+      }>(`/api/last-answer/${bipNumber}`);
+      return {
+        question: response.question,
+        answer: response.answer,
+      };
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('API request failed (404)')) {
+        return null;
+      }
+      throw error;
+    }
   },
   async askBipChat(payload) {
     if (!payload.bipNumber) {
@@ -156,7 +178,7 @@ export const httpProvider: ApiProvider = {
       question: response.question || payload.question,
       shortAnswer: answer || 'No answer returned yet.',
       inPlainTerms: answer,
-      whatBipsSay: answer,
+      whatBipsSay: '',
       confidence: 0.5,
       coverage: 0.5,
       coverageTier: 'Partial',

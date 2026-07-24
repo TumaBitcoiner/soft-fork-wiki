@@ -17,6 +17,7 @@ from .models import (
     ExplainRequest,
     ExplainResponse,
     HealthResponse,
+    LastAnswerResponse,
     RefreshResponse,
 )
 
@@ -234,6 +235,25 @@ def create_app(config: Optional[AppConfig] = None) -> FastAPI:
         data = response.json()
         try:
             return AskResponse(**data)
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail="Invalid LLM response") from exc
+
+    @app.get("/api/last-answer/{bip_number}", response_model=LastAnswerResponse)
+    async def last_answer(bip_number: int) -> LastAnswerResponse:
+        try:
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.get(
+                    app_config.llm_base_url.rstrip("/") + f"/last-answer/{bip_number}",
+                )
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=503, detail="LLM backend unavailable") from exc
+
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=response.text)
+
+        data = response.json()
+        try:
+            return LastAnswerResponse(**data)
         except Exception as exc:
             raise HTTPException(status_code=502, detail="Invalid LLM response") from exc
 

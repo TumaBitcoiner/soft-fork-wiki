@@ -39,4 +39,17 @@ describe('httpProvider', () => {
     await expect(httpProvider.askBipExplain({ question: 'Explain Taproot.', mode: 'Balanced' }))
       .rejects.toThrow('Select a BIP to ask about.');
   });
+
+  it('returns null for getLatestAnswer when no cached answer exists', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: async () => ({ detail: 'Last answer not found' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(httpProvider.getLatestAnswer(119)).resolves.toBeNull();
+
+    vi.unstubAllGlobals();
+  });
 });

@@ -44,21 +44,15 @@ export const mockProvider: ApiProvider = {
       ?? bips.find((item) => terms.includes(String(item.number)) || terms.includes(item.title.toLowerCase().split(' ')[0]))
       ?? bips.find((item) => item.number === 341)!;
     const technical = payload.mode === 'Technical';
-    const asksForAgainst = terms.includes('oppose') || terms.includes('against') || terms.includes('concern');
-    const asksForSupport = terms.includes('support') || terms.includes('favor') || terms.includes('for it');
     const coverage = technical ? 92 : bip.status === 'Draft' ? 62 : 84;
     const tier = coverageTier(coverage);
-    let whatBipsSay = bip.whatChanged;
-    if (asksForAgainst) whatBipsSay = `Some people argue: ${bip.caseAgainst.join(' ')}`;
-    else if (asksForSupport) whatBipsSay = `Some people argue: ${bip.caseFor.join(' ')}`;
-
     return {
       question: payload.question,
       shortAnswer: bip.number === 341
         ? 'Taproot lets a Bitcoin output be spent either by a single aggregated key or by revealing only the executed branch of a committed script tree.'
         : bip.plainSummary,
       inPlainTerms: bip.inPlainTerms,
-      whatBipsSay,
+      whatBipsSay: '',
       confidence: 86,
       coverage,
       coverageTier: tier,
@@ -79,6 +73,15 @@ export const mockProvider: ApiProvider = {
   },
   async askBipExplain(payload: AskPayload) {
     return mockProvider.askBips(payload);
+  },
+  async getLatestAnswer(bipNumber: number) {
+    await wait(120);
+    const bip = bips.find((item) => item.number === bipNumber);
+    if (!bip) return null;
+    return {
+      question: `What should I understand about BIP ${bip.number}?`,
+      answer: bip.plainSummary,
+    };
   },
   async askBipChat(payload: AskPayload) {
     return mockProvider.askBips(payload);

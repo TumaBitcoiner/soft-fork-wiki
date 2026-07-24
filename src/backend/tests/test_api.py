@@ -2,9 +2,11 @@ from pathlib import Path
 
 import httpx
 import pytest
+from httpx import Request, Response
 
 from app.config import AppConfig
 from app.main import create_app
+import app.main as main_module
 
 
 def _write_bip(repo_path: Path, number: int = 119) -> None:
@@ -42,6 +44,24 @@ def _app(tmp_path: Path):
         llm_base_url="http://localhost:8001",
     )
     return create_app(config)
+
+
+class _MockLLMTransport(httpx.AsyncBaseTransport):
+    async def handle_async_request(self, request: Request) -> Response:
+        if "last-answer" in request.url.path:
+            return Response(
+                200,
+                json={
+                    "bip_number": 119,
+                    "question": "What should I understand about BIP 119?",
+                    "answer": "Latest cached answer.",
+                    "model": "test-model",
+                    "prompt_version": "v1",
+                    "created_at": "2026-07-24T00:00:00Z",
+                    "updated_at": "2026-07-24T00:00:00Z",
+                },
+            )
+        return Response(404, json={"detail": "Not found"})
 
 
 @pytest.mark.anyio
@@ -134,3 +154,25 @@ async def test_local_cors_origin(tmp_path: Path) -> None:
 
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+
+
+@pytest.mark.anyio
+async def test_last_answer_proxy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    app = _app(tmp_path)
+    transport = httpx.ASGITransport(app=app)
+    original_async_client = httpx.AsyncClient
+
+    def _client_factory(*args, **kwargs):
+        return original_async_client(transport=_MockLLMTransport(), base_url="http://llm")
+
+    monkeypatch.setattr(main_module.httpx, "AsyncClient", _client_factory)
+
+    async with app.router.lifespan_context(app):
+        async with httpx.AsyncClient(
+            transport=transport,
+            base_url="http://test",
+        ) as client:
+            response = await client.get("/api/last-answer/119")
+
+    assert response.status_code == 200
+    assert response.json()["answer"] == "Latest cached answer."

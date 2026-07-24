@@ -87,3 +87,13 @@ class AskResponse(BaseModel):
     created_at: str
     updated_at: str
     cached: bool
+
+
+class LastAnswerResponse(BaseModel):
+    bip_number: int
+    question: str
+    answer: str
+    model: str
+    prompt_version: str
+    created_at: str
+    updated_at: str

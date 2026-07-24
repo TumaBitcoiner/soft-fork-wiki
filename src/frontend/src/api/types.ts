@@ -164,6 +164,7 @@ export interface ApiProvider {
   askBips(payload: AskPayload): Promise<AskAnswer>;
   askBipChat(payload: AskPayload): Promise<AskAnswer>;
   askBipExplain(payload: AskPayload): Promise<AskAnswer>;
+  getLatestAnswer(bipNumber: number): Promise<{ question: string; answer: string } | null>;
   getTimeline(params?: TimelineParams): Promise<TimelineItem[]>;
   getSentiment(bipNumber: number): Promise<SentimentData>;
   submitSentiment(payload: SubmitSentimentPayload): Promise<SentimentData>;
