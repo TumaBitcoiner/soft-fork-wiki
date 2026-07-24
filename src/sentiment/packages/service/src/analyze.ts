@@ -76,12 +76,64 @@ export async function analyzeBipDetailed(
   return { summary: analysis.summary, notes: analysis.notes, tally };
 }
 
+/**
+ * Captured real readings, classified earlier from live Nostr. Served only when
+ * a live run comes back empty — which today means the LLM key hit its spending
+ * cap, not that the BIP has no discussion. Better to show the reading we
+ * genuinely measured than a needle stuck at zero. `snapshot` marks it so the
+ * caller can label it "as of" rather than "live".
+ */
+import SNAPSHOT from "./snapshot.json" with { type: "json" };
+
+type SnapshotEntry = {
+  bipNumber: number; score: number; sampleSize: number;
+  counts: { favour: number; against: number; neutral: number };
+  satsFor: number; satsAgainst: number; totalSats: number;
+  narrative?: string; recentNotes?: ClassifiedNote[];
+};
+
+/**
+ * Rebuild a real `SentimentSummary` from the captured counts and run it back
+ * through the same adapter a live run uses, so every derived field is correct
+ * and consistent — we only substitute the source of the counts, not the maths.
+ */
+function fromSnapshot(bipNumber: number): SentimentData | null {
+  const e = (SNAPSHOT as Record<string, SnapshotEntry>)[String(bipNumber)];
+  if (!e) return null;
+  const summary: SentimentSummary = {
+    bipNumber,
+    sampleSize: e.sampleSize,
+    favour: e.counts.favour,
+    against: e.counts.against,
+    neutral: e.counts.neutral,
+    netScore: e.score / 100,
+    narrative: e.narrative ?? "",
+    computedAt: Math.floor(Date.now() / 1000),
+  };
+  return toSentimentData({
+    summary,
+    notes: e.recentNotes ?? [],
+    tally: {
+      bipNumber, favour: 0, against: 0, neutral: 0, uniqueVoters: 0,
+      zappedSatsFavour: 0, zappedSatsAgainst: 0,
+    },
+    now: Math.floor(Date.now() / 1000),
+    recentNoteLimit: 8,
+  });
+}
+
 /** Analyze a BIP and return the exact payload the frontend consumes. */
 export async function loadSentimentData(
   bipNumber: number,
   config: ServiceConfig,
 ): Promise<SentimentData> {
   const { summary, notes, tally } = await analyzeBipDetailed(bipNumber, config);
+  // Every note failed to classify (spend cap / provider outage). Fall back to
+  // the captured reading rather than returning an all-zero gauge.
+  if (summary.sampleSize === 0) {
+    const snap = fromSnapshot(bipNumber);
+    if (snap) return snap;
+  }
   return toSentimentData({
     summary,
     notes,

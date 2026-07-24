@@ -1,0 +1,210 @@
+{
+ "54": {
+  "bipNumber": 54,
+  "score": 67,
+  "sampleSize": 66,
+  "for": 38,
+  "against": 8,
+  "neutral": 55,
+  "counts": {
+   "favour": 25,
+   "against": 5,
+   "neutral": 36
+  },
+  "satsFor": 664,
+  "satsAgainst": 21,
+  "totalSats": 685
+ },
+ "110": {
+  "bipNumber": 110,
+  "score": 45,
+  "sampleSize": 118,
+  "for": 53,
+  "against": 20,
+  "neutral": 26,
+  "counts": {
+   "favour": 63,
+   "against": 24,
+   "neutral": 31
+  },
+  "satsFor": 7191,
+  "satsAgainst": 694,
+  "totalSats": 7885
+ },
+ "118": {
+  "bipNumber": 118,
+  "score": 22,
+  "sampleSize": 72,
+  "for": 35,
+  "against": 22,
+  "neutral": 43,
+  "counts": {
+   "favour": 25,
+   "against": 16,
+   "neutral": 31
+  },
+  "satsFor": 0,
+  "satsAgainst": 0,
+  "totalSats": 0
+ },
+ "119": {
+  "bipNumber": 119,
+  "score": 51,
+  "sampleSize": 129,
+  "for": 31,
+  "against": 10,
+  "neutral": 59,
+  "counts": {
+   "favour": 40,
+   "against": 13,
+   "neutral": 76
+  },
+  "satsFor": 625,
+  "satsAgainst": 542,
+  "totalSats": 1167
+ },
+ "141": {
+  "bipNumber": 141,
+  "score": 77,
+  "sampleSize": 122,
+  "for": 43,
+  "against": 6,
+  "neutral": 51,
+  "counts": {
+   "favour": 53,
+   "against": 7,
+   "neutral": 62
+  },
+  "satsFor": 1253,
+  "satsAgainst": 3095,
+  "totalSats": 4348
+ },
+ "158": {
+  "bipNumber": 158,
+  "score": 80,
+  "sampleSize": 90,
+  "for": 59,
+  "against": 7,
+  "neutral": 34,
+  "counts": {
+   "favour": 53,
+   "against": 6,
+   "neutral": 31
+  },
+  "satsFor": 75164,
+  "satsAgainst": 0,
+  "totalSats": 75164
+ },
+ "300": {
+  "bipNumber": 300,
+  "score": 24,
+  "sampleSize": 183,
+  "for": 30,
+  "against": 19,
+  "neutral": 51,
+  "counts": {
+   "favour": 55,
+   "against": 34,
+   "neutral": 94
+  },
+  "satsFor": 6205,
+  "satsAgainst": 3870,
+  "totalSats": 10075
+ },
+ "340": {
+  "bipNumber": 340,
+  "score": 100,
+  "sampleSize": 12,
+  "for": 50,
+  "against": 0,
+  "neutral": 50,
+  "counts": {
+   "favour": 6,
+   "against": 0,
+   "neutral": 6
+  },
+  "satsFor": 8688,
+  "satsAgainst": 192,
+  "totalSats": 8880
+ },
+ "341": {
+  "bipNumber": 341,
+  "score": 83,
+  "sampleSize": 130,
+  "for": 66,
+  "against": 6,
+  "neutral": 28,
+  "counts": {
+   "favour": 86,
+   "against": 8,
+   "neutral": 36
+  },
+  "satsFor": 296,
+  "satsAgainst": 23,
+  "totalSats": 319
+ },
+ "347": {
+  "bipNumber": 347,
+  "score": 100,
+  "sampleSize": 6,
+  "for": 17,
+  "against": 0,
+  "neutral": 83,
+  "counts": {
+   "favour": 1,
+   "against": 0,
+   "neutral": 5
+  },
+  "satsFor": 0,
+  "satsAgainst": 0,
+  "totalSats": 0
+ },
+ "352": {
+  "bipNumber": 352,
+  "score": 86,
+  "sampleSize": 133,
+  "for": 68,
+  "against": 5,
+  "neutral": 27,
+  "counts": {
+   "favour": 90,
+   "against": 7,
+   "neutral": 36
+  },
+  "satsFor": 8449,
+  "satsAgainst": 321,
+  "totalSats": 8770
+ },
+ "360": {
+  "bipNumber": 360,
+  "score": 72,
+  "sampleSize": 169,
+  "for": 47,
+  "against": 8,
+  "neutral": 45,
+  "counts": {
+   "favour": 80,
+   "against": 13,
+   "neutral": 76
+  },
+  "satsFor": 815,
+  "satsAgainst": 252,
+  "totalSats": 1067
+ },
+ "444": {
+  "bipNumber": 444,
+  "score": 6,
+  "sampleSize": 129,
+  "for": 22,
+  "against": 19,
+  "neutral": 59,
+  "counts": {
+   "favour": 28,
+   "against": 25,
+   "neutral": 76
+  },
+  "satsFor": 21,
+  "satsAgainst": 3258,
+  "totalSats": 3279
+ }
+}

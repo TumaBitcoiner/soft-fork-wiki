@@ -173,12 +173,13 @@ export const httpProvider: ApiProvider = {
     };
   },
   getTimeline: unavailable('Timeline'),
-  // Live from the sentiment service. Phase 1 (default) reads zaps off the relays
-  // with no LLM; ?mode=llm classifies discussion. Returns the SentimentData
-  // shape this app already declares. See src/sentiment/docs/AGENTS.md — `score`
-  // is a net lean, not a share of people.
+  // Live from the sentiment service. We ask for mode=llm because it's the mode
+  // that yields a for/against direction to draw the meter — zaps on public
+  // posts carry magnitude but no side. Cache-served in ~2ms once warm. Returns
+  // the SentimentData shape this app already declares. See
+  // src/sentiment/docs/AGENTS.md — `score` is a net lean, not a share of people.
   getSentiment: (bipNumber) =>
-    request(`/sentiment/${bipNumber}`, undefined, sentimentBaseUrl),
+    request(`/sentiment/${bipNumber}?mode=llm`, undefined, sentimentBaseUrl),
   // Recording a vote publishes a signed Nostr event, which needs the user's key.
   // That belongs in the browser via @soft-fork-wiki/voting, never on a server.
   submitSentiment: unavailable('Sentiment submission'),

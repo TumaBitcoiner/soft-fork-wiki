@@ -34,7 +34,7 @@ describe('httpProvider', () => {
     // Separate origin on purpose: :8000 is the Python BIPs API and cannot serve
     // this. Pinning the port guards against it being folded back in.
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:8002/sentiment/119',
+      'http://localhost:8002/sentiment/119?mode=llm',
       expect.any(Object),
     );
     vi.unstubAllGlobals();
