@@ -15,7 +15,7 @@ const journeySteps = [
 
 const Index = () => {
   useSeoMeta({
-    title: 'Just Ask BIPs · Bitcoin consensus history, from the source',
+    title: 'Just Ask BIPs - Consensus Edition',
     description: 'Understand Bitcoin consensus proposals from the source. Ask questions, see both sides, and decide for yourself.',
   });
 
@@ -72,15 +72,24 @@ const Index = () => {
           </div>
         </section>
 
-        <section className="border-b border-[#D8D2C4] bg-white">
-          <div className="mx-auto max-w-5xl px-4 py-16 text-center sm:px-6 lg:px-8">
-            <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#00A7CC]">Why this exists</p>
-            <h2 className="mt-4 font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
-              When Bitcoin debates explode, the loudest voices usually win.
-            </h2>
-            <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-[#4B5563]">
-              Just Ask BIPs gives you the source material, plain-language explanations, and a place to ask basic questions without getting talked down to. Understand it, then decide for yourself.
-            </p>
+        <section className="relative isolate min-h-[500px] overflow-hidden border-b border-[#292E32]">
+          <img
+            src="/images/why-consensus-crossroads.png"
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 -z-20 size-full object-cover object-center"
+          />
+          <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(9,14,18,.94)_0%,rgba(9,14,18,.82)_42%,rgba(9,14,18,.35)_72%,rgba(9,14,18,.56)_100%)] sm:bg-[linear-gradient(90deg,rgba(9,14,18,.92)_0%,rgba(9,14,18,.76)_44%,rgba(9,14,18,.22)_72%,rgba(9,14,18,.48)_100%)]" />
+          <div className="mx-auto flex min-h-[500px] max-w-7xl items-center px-4 py-16 sm:px-6 lg:px-8">
+            <div className="max-w-xl rounded-xl border border-white/20 bg-[#111820]/75 p-6 shadow-xl backdrop-blur-[2px] sm:p-8">
+              <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#FFB75A]">Why this exists</p>
+              <h2 className="mt-4 font-heading text-3xl font-semibold tracking-tight text-[#FFF9ED] sm:text-4xl">
+                When Bitcoin debates explode, the loudest voices usually win.
+              </h2>
+              <p className="mt-5 text-lg leading-8 text-[#F1E8D8]">
+                Just Ask BIPs gives you the source material, plain-language explanations, and a place to ask basic questions without getting talked down to. Understand it, then decide for yourself.
+              </p>
+            </div>
           </div>
         </section>
 

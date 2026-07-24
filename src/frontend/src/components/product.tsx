@@ -53,9 +53,12 @@ export function TopNav() {
   return (
     <header className="sticky top-0 z-40 border-b border-[#D8D2C4] bg-[#F6F1E7]/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link to="/" className="flex items-center gap-3 font-semibold tracking-tight" aria-label="Just Ask BIPs home">
+        <Link to="/" className="flex items-center gap-3 font-semibold tracking-tight" aria-label="Just Ask BIPs - Consensus Edition home">
           <img src="/images/just-ask-bips-logo.png" alt="" className="size-11 object-contain drop-shadow-[1px_2px_1px_rgba(17,24,39,.18)]" />
-          <span className="font-heading">Just Ask <span className="text-[#B65F00]">BIPs</span></span>
+          <span className="font-heading leading-tight">
+            Just Ask <span className="text-[#B65F00]">BIPs</span>
+            <span className="block font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-[#6B7280]">Consensus Edition</span>
+          </span>
         </Link>
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
           {navItems.map(([label, href]) => (
@@ -103,7 +106,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3">
             <img src="/images/just-ask-bips-logo.png" alt="" className="size-14 object-contain drop-shadow-[1px_2px_1px_rgba(17,24,39,.16)]" />
             <div>
-              <p className="font-heading font-semibold">Just Ask BIPs</p>
+              <p className="font-heading font-semibold">Just Ask BIPs - Consensus Edition</p>
               <p className="mt-1 text-sm text-[#6B7280]">Consensus history, explained from the source.</p>
             </div>
           </div>
