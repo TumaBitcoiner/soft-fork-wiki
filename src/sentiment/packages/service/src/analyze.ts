@@ -127,6 +127,17 @@ export async function loadSentimentData(
   bipNumber: number,
   config: ServiceConfig,
 ): Promise<SentimentData> {
+  // Snapshot-first for BIPs we have already measured. A cold live run classifies
+  // 130-200 posts one model call at a time — tens of seconds, and a single
+  // dropped connection surfaces as an error in the UI. For a proposal whose
+  // reading we captured earlier the same day, serving it instantly is both
+  // faster and more reliable, and the numbers are real. `?refresh=1` still
+  // forces a live re-run, and BIPs with no snapshot always go live.
+  if (config.snapshotFirst) {
+    const snap = fromSnapshot(bipNumber);
+    if (snap) return snap;
+  }
+
   const { summary, notes, tally } = await analyzeBipDetailed(bipNumber, config);
   // Every note failed to classify (spend cap / provider outage). Fall back to
   // the captured reading rather than returning an all-zero gauge.

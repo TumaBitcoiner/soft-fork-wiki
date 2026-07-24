@@ -60,6 +60,12 @@ export interface ServiceConfig {
   discussionTtlMs: number;
   /** How many notes to surface in `recentNotes`. */
   recentNoteLimit: number;
+  /**
+   * Serve a captured reading instantly for BIPs we already measured, instead of
+   * classifying live on every cold request. On by default: a live cold run is
+   * tens of seconds and can surface a dropped-connection error in the UI.
+   */
+  snapshotFirst: boolean;
   /** Classifier backend. Undefined lets the sentiment package pick its default. */
   provider?: ProviderName;
   /** Relay override. Undefined falls back to DEFAULT_RELAYS from shared. */
@@ -238,6 +244,8 @@ export function loadConfig(): ServiceConfig {
       60 * 60 * 1000,
     ),
     recentNoteLimit: readInt("SENTIMENT_RECENT_NOTES", DEFAULT_RECENT_NOTES, 0, 50),
+    // Default on. Set SENTIMENT_SNAPSHOT_FIRST=0 to always classify live.
+    snapshotFirst: (process.env.SENTIMENT_SNAPSHOT_FIRST ?? "1") !== "0",
     provider: readProvider(),
     relays: readRelays(),
   };
